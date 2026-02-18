@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 주택청약 맞춤 전략 분석기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root {
+  --bg: #06090F;
+  --bg2: #0C1220;
+  --card: #111827;
+  --card2: #151d2e;
+  --card-hover: #182035;
+  --border: #1E293B;
+  --border-l: #283548;
+  --accent: #22D3EE;
+  --accent-dim: rgba(34,211,238,0.12);
+  --green: #34D399;
+  --green-dim: rgba(52,211,153,0.12);
+  --red: #F87171;
+  --red-dim: rgba(248,113,113,0.10);
+  --orange: #FBBF24;
+  --orange-dim: rgba(251,191,36,0.12);
+  --purple: #A78BFA;
+  --purple-dim: rgba(167,139,250,0.12);
+  --pink: #F472B6;
+  --pink-dim: rgba(244,114,182,0.12);
+  --text: #F1F5F9;
+  --text-dim: #94A3B8;
+  --text-muted: #546178;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+input::placeholder{color:var(--text-muted)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
+@keyframes barGrow{from{width:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* ===== HEADER ===== */
+.header{padding:30px 20px 0;text-align:center;background:linear-gradient(180deg,var(--bg2),var(--bg));position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;left:50%;transform:translateX(-50%);width:700px;height:350px;background:radial-gradient(ellipse,rgba(34,211,238,0.05),transparent 70%);pointer-events:none}
+.header-tag{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}
+.header h1{font-size:24px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{font-size:12px;color:var(--text-muted);line-height:1.7;max-width:440px;margin:0 auto}
+
+/* ===== TABS ===== */
+.tab-bar{display:flex;gap:0;margin-top:20px;border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:100;background:var(--bg);padding:0 4px}
+.tab-btn{flex:1;padding:13px 6px 12px;font-size:13px;font-weight:600;color:var(--text-muted);background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:-.01em;position:relative}
+.tab-btn:hover{color:var(--text-dim)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn .tab-icon{display:block;font-size:16px;margin-bottom:3px}
+.tab-btn .tab-num{position:absolute;top:6px;right:12px;min-width:18px;height:18px;border-radius:9px;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;line-height:1}
+.tab-btn .tab-num.show{display:flex}
+
+/* ===== CONTAINER ===== */
+.container{max-width:740px;margin:0 auto;padding:0 14px 90px}
+.tab-panel{display:none;padding-top:24px}
+.tab-panel.active{display:block;animation:fadeUp .4s ease}
+
+/* ===== SECTION ===== */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sec-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sec-head h2{font-size:17px;font-weight:800}
+.sec-head h2 span{font-size:13px;font-weight:600;margin-left:6px}
+.sec-sub{font-size:12px;color:var(--text-muted);margin:-10px 0 18px 40px;line-height:1.6}
+
+/* ===== FORM ===== */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px 20px}
+.form-grid{display:flex;flex-wrap:wrap;gap:16px}
+.field{flex:1 1 100%;min-width:0}
+.field.half{flex:1 1 47%;min-width:170px}
+.field label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;font-weight:500}
+.field label small{color:var(--text-muted);font-size:11px;margin-left:4px;font-weight:400}
+.field input{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus{border-color:var(--accent)}
+.input-wrap{position:relative}
+.input-suffix{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none}
+.opt-group{display:flex;gap:8px;flex-wrap:wrap}
+.opt-btn{flex:1;min-width:76px;padding:10px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center}
+.opt-btn:hover{border-color:var(--accent);color:var(--accent)}
+.opt-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:700}
+.analyze-btn{width:100%;margin-top:24px;padding:15px 0;border-radius:13px;border:none;background:linear-gradient(135deg,#22D3EE,#06B6D4);color:var(--bg);font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em;transition:all .25s;box-shadow:0 4px 24px rgba(34,211,238,.25)}
+.analyze-btn:hover{box-shadow:0 6px 36px rgba(34,211,238,.4);transform:translateY(-1px)}
+.analyze-btn:active{transform:translateY(0)}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ===== EMPTY STATE ===== */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state .empty-icon{font-size:42px;margin-bottom:12px;opacity:.5}
+.empty-state .empty-title{font-size:16px;font-weight:700;color:var(--text-dim);margin-bottom:6px}
+.empty-state .empty-desc{font-size:13px;line-height:1.7}
+.empty-state .go-btn{display:inline-block;margin-top:16px;padding:10px 24px;border-radius:10px;border:1.5px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
+.empty-state .go-btn:hover{background:var(--accent);color:var(--bg)}
+
+/* ===== STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center}
+.stat-icon{font-size:20px;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:900}
+.stat-label{font-size:10px;color:var(--text-muted);margin-top:2px;font-weight:600}
+
+/* ===== RESULT CARDS ===== */
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;margin-bottom:10px}
+.result-card:hover{background:var(--card-hover)}
+.result-card.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.result-left{display:flex;align-items:center;gap:12px;flex:1}
+.rank-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0}
+.result-name{font-size:15px;font-weight:700;margin-bottom:4px}
+.badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.arrow{font-size:10px;color:var(--text-muted);transition:transform .2s;margin-top:4px}
+.result-card.open .arrow{transform:rotate(180deg)}
+.score-section{margin-top:10px}
+.score-label{font-size:12px;color:var(--text-dim);margin-bottom:5px}
+.score-row{display:flex;align-items:center;gap:10px}
+.score-track{flex:1;height:8px;border-radius:4px;background:var(--border);overflow:hidden}
+.score-fill{height:100%;border-radius:4px;animation:barGrow .8s ease}
+.score-num{font-size:14px;font-weight:800;min-width:56px;text-align:right}
+.detail-panel{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+.result-card.open .detail-panel{display:block;animation:fadeUp .3s ease}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 16px}
+.detail-key{font-size:10px;color:var(--text-muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+.detail-val{font-size:13px;color:var(--text-dim);font-weight:500}
+.warn-tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px}
+.warn-tag{font-size:11px;padding:2px 8px;border-radius:4px}
+
+/* ===== INELIGIBLE ===== */
+.ineligible-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:8px;opacity:.7}
+.ineligible-head{display:flex;justify-content:space-between;align-items:center}
+.ineligible-name{font-size:14px;color:var(--text-dim)}
+.ineligible-cat{font-size:12px;color:var(--text-muted);margin-left:8px}
+.reason-tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+
+/* ===== SUPPLY ===== */
+.supply-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.supply-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 18px;transition:border-color .2s}
+.supply-card:hover{border-color:var(--border-l)}
+.supply-card.recommended{border-color:rgba(34,211,238,.2)}
+.supply-card.recommended::before{content:'추천';position:absolute;top:10px;right:12px;font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:4px}
+.supply-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.supply-name{font-size:14px;font-weight:800}
+.supply-info{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.supply-key{font-size:10px;color:var(--text-muted)}
+.supply-val{font-size:13px;color:var(--text-dim);font-weight:600}
+.supply-filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.supply-filter{padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.supply-filter:hover{border-color:var(--text-muted);color:var(--text-dim)}
+.supply-filter.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.supply-total{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.supply-total b{color:var(--accent);font-weight:800}
+
+/* ===== TABLE ===== */
+.data-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:20px}
+.data-table{width:100%;border-collapse:collapse}
+.data-table thead th{padding:13px 16px;text-align:left;color:var(--text-muted);font-weight:700;font-size:11px;letter-spacing:.04em;background:var(--bg2);border-bottom:1px solid var(--border)}
+.data-table tbody td{padding:13px 16px;font-size:13px;color:var(--text-dim);border-bottom:1px solid var(--border)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:rgba(255,255,255,.015)}
+
+/* ===== ROADMAP ===== */
+.roadmap-step{display:flex;gap:16px;position:relative}
+.roadmap-line{display:flex;flex-direction:column;align-items:center;min-width:44px}
+.roadmap-dot{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;border:2.5px solid;flex-shrink:0}
+.roadmap-connector{flex:1;width:2px;background:var(--border);margin-top:6px}
+.roadmap-content{flex:1;padding-bottom:30px}
+.roadmap-period{font-size:11px;font-weight:700;letter-spacing:.06em;margin-bottom:3px}
+.roadmap-title{font-size:17px;font-weight:800;margin-bottom:12px}
+.roadmap-items{display:flex;flex-direction:column;gap:8px}
+.roadmap-item{font-size:13px;color:var(--text-dim);padding:10px 14px 10px 30px;position:relative;line-height:1.6;background:var(--card);border:1px solid var(--border);border-radius:10px;transition:border-color .2s}
+.roadmap-item:hover{border-color:var(--border-l)}
+.roadmap-item::before{content:'›';position:absolute;left:14px;font-weight:900;font-size:15px}
+.roadmap-check{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .2s}
+.roadmap-check.checked{border-color:var(--green);background:var(--green-dim);color:var(--green)}
+
+/* ===== DISCLAIMER ===== */
+.disclaimer{margin-top:28px;padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:11px;font-size:11px;color:var(--text-muted);line-height:1.8;text-align:center}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:560px){
+  .header h1{font-size:20px}
+  .tab-btn{font-size:11px;padding:11px 2px 10px}
+  .tab-btn .tab-icon{font-size:14px}
+  .field.half{flex:1 1 100%}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .supply-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .data-table-wrap{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-tag">2026 Housing Subscription Analyzer</div>
+  <h1>주택청약 맞춤 전략 분석기</h1>
+  <p>개인 조건 입력 → 자격 판정 → 추천 단지 → 실행 로드맵까지 한 번에</p>
+</div>
+
+<!-- TABS -->
+<div style="max-width:740px;margin:0 auto;padding:0 14px">
+<nav class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="tab1" onclick="switchTab('tab1')">
+    <span class="tab-icon">✏️</span>조건 입력
+  </button>
+  <button class="tab-btn" data-tab="tab2" onclick="switchTab('tab2')">
+    <span class="tab-icon">🎯</span>전략 분석
+    <span class="tab-num" id="numEligible"></span>
+  </button>
+  <button class="tab-btn" data-tab="tab3" onclick="switchTab('tab3')">
+    <span class="tab-icon">🏗</span>공급 단지
+    <span class="tab-num" id="numSupply"></span>
+  </button>
+  <button class="tab-btn" data-tab="tab4" onclick="switchTab('tab4')">
+    <span class="tab-icon">🗺</span>로드맵
+  </button>
+</nav>
+</div>
+
+<div class="container">
+
+  <!-- ===================== TAB 1: 조건 입력 ===================== -->
+  <div class="tab-panel active" id="tab1">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--accent-dim)">📋</div>
+      <h2>개인 조건 입력</h2>
+    </div>
+    <div class="sec-sub">아래 정보를 입력하면 10개 청약 유형의 자격 여부, 가점, 추천 단지, 실행 로드맵을 자동 생성합니다.</div>
+
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field"><label>거주지</label><input id="residence" placeholder="서울시 강남구 / 경기도 성남시"></div>
+
+        <div class="field half"><label>혼인 기간 <small>만 7년 이내 신혼</small></label><div class="input-wrap"><input type="number" id="marriageYears" placeholder="2" min="0"><span class="input-suffix">년차</span></div></div>
+        <div class="field half"><label>자녀 나이 (만) <small>쉼표 구분</small></label><input id="childAges" placeholder="1, 3"></div>
+
+        <div class="field half"><label>소득 형태</label><div class="opt-group" id="incomeTypeGroup"><button class="opt-btn active" data-value="외벌이" onclick="sel('incomeTypeGroup',this)">외벌이</button><button class="opt-btn" data-value="맞벌이" onclick="sel('incomeTypeGroup',this)">맞벌이</button></div></div>
+        <div class="field half"><label>합산 월소득</label><div class="input-wrap"><input type="number" id="monthlyIncome" placeholder="600" min="0"><span class="input-suffix">만원</span></div></div>
+
+        <div class="field half"><label>부동산 보유가액 <small>공시가</small></label><div class="input-wrap"><input type="number" id="realEstateValue" placeholder="15000" min="0"><span class="input-suffix">만원</span></div></div>
+        <div class="field half"><label>차량 시가</label><div class="input-wrap"><input type="number" id="carValue" placeholder="500" min="0"><span class="input-suffix">만원</span></div></div>
+
+        <div class="field"><label>청약통장 종류</label><div class="opt-group" id="accountTypeGroup"><button class="opt-btn active" data-value="주택청약종합저축" onclick="sel('accountTypeGroup',this)">주택청약종합저축</button><button class="opt-btn" data-value="청약저축" onclick="sel('accountTypeGroup',this)">청약저축</button><button class="opt-btn" data-value="청약예금" onclick="sel('accountTypeGroup',this)">청약예금</button></div></div>
+
+        <div class="field half"><label>통장 가입기간</label><div class="input-wrap"><input type="number" id="accountYears" placeholder="10" min="0"><span class="input-suffix">년</span></div></div>
+        <div class="field half"><label>납입 횟수</label><div class="input-wrap"><input type="number" id="accountPayments" placeholder="120" min="0"><span class="input-suffix">회</span></div></div>
+
+        <div class="field half"><label>무주택 세대주 여부</label><div class="opt-group" id="homelessGroup"><button class="opt-btn active" data-value="예" onclick="sel('homelessGroup',this)">예</button><button class="opt-btn" data-value="아니오" onclick="sel('homelessGroup',this)">아니오</button></div></div>
+      </div>
+
+      <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">🔍 청약 전략 분석 시작</button>
+    </div>
+  </div>
+
+  <!-- ===================== TAB 2: 전략 분석 ===================== -->
+  <div class="tab-panel" id="tab2">
+    <div id="tab2Content">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">분석 결과가 없습니다</div>
+        <div class="empty-desc">먼저 [조건 입력] 탭에서 개인 조건을 입력하고<br>분석을 실행해 주세요.</div>
+        <button class="go-btn" onclick="switchTab('tab1')">조건 입력하러 가기 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TAB 3: 공급 단지 ===================== -->
+  <div class="tab-panel" id="tab3">
+    <div id="tab3Content">
+      <div class="empty-state">
+        <div class="empty-icon">🏗</div>
+        <div class="empty-title">추천 단지를 확인하려면</div>
+        <div class="empty-desc">먼저 [조건 입력] 탭에서 분석을 실행해 주세요.<br>자격에 맞는 단지를 자동으로 필터링합니다.</div>
+        <button class="go-btn" onclick="switchTab('tab1')">조건 입력하러 가기 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TAB 4: 로드맵 ===================== -->
+  <div class="tab-panel" id="tab4">
+    <div id="tab4Content">
+      <div class="empty-state">
+        <div class="empty-icon">🗺</div>
+        <div class="empty-title">실행 로드맵을 확인하려면</div>
+        <div class="empty-desc">먼저 [조건 입력] 탭에서 분석을 실행해 주세요.<br>맞춤형 단계별 행동 계획을 생성합니다.</div>
+        <button class="go-btn" onclick="switchTab('tab1')">조건 입력하러 가기 →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================
+// DATA
+// ============================
+const MI = 576.5; // 4인가구 기준중위소득 만원/월
+
+const TYPES = [
+  {id:"pub_nat",cat:"공공임대",name:"LH 국민임대",iL:.7,iLD:null,ast:24700,car:4563,re:21550,met:"추첨·우선",rent:"시세 30~50%",per:"30년",ch:"자녀 우선공급",dif:"낮음",note:"영구 거주 가능",seoul:0},
+  {id:"pub_hap",cat:"공공임대",name:"LH 행복주택(신혼)",iL:1,iLD:1.2,ast:24700,car:4563,re:21550,met:"우선30%+일반20%",rent:"시세 60~80%",per:"6년(자녀시 10년)",ch:"자녀 시 4년 연장",dif:"중간",note:"역세권 위주",seoul:0},
+  {id:"pub_js1",cat:"공공임대",name:"LH 전세임대(Ⅰ형)",iL:1,iLD:null,ast:36100,car:4563,re:21550,met:"추천방식",rent:"보증금 지원, 月이자만",per:"2년+재계약",ch:"우선순위",dif:"낮음",note:"실거주 선택 자유",seoul:0},
+  {id:"pub_js2",cat:"공공임대",name:"LH 전세임대(Ⅱ형)",iL:1.4,iLD:null,ast:36100,car:4563,re:21550,met:"추천방식",rent:"보증금 지원, 月이자만",per:"2년+재계약",ch:"자녀가산",dif:"낮음",note:"Ⅰ형 소득초과 시",seoul:0},
+  {id:"sh_js",cat:"서울SH",name:"SH 장기전세(시프트)",iL:1.2,iLD:null,ast:37900,car:4563,re:21550,met:"우선·일반",rent:"시세 80% 전세형",per:"20년",ch:"자녀 우선 10%",dif:"높음",note:"서울 전세 핵심",seoul:1},
+  {id:"pub_new",cat:"공공분양",name:"공공분양 신혼특공",iL:1.3,iLD:null,ast:37900,car:4563,re:21550,met:"우선30%+일반70%",rent:"시세 70~80%",per:"소유권 취득",ch:"자녀 우선공급",dif:"높음",note:"10년 전매제한",seoul:0,newlywed:1},
+  {id:"pub_gen",cat:"공공분양",name:"공공분양 일반공급",iL:null,iLD:null,ast:37900,car:4563,re:21550,met:"순위별",rent:"시세 70~80%",per:"소유권 취득",ch:"없음",dif:"중간",note:"통장납입 중요",seoul:0},
+  {id:"pvt_new",cat:"민영주택",name:"민영 신혼특공",iL:1.4,iLD:1.6,ast:null,car:null,re:null,met:"우선30%+일반70%",rent:"시장가",per:"소유권 취득",ch:"자녀 가산점",dif:"높음",note:"투기과열: 가점100%",seoul:0,newlywed:1},
+  {id:"pvt_gen",cat:"민영주택",name:"민영 일반공급 추첨제",iL:null,iLD:null,ast:null,car:null,re:null,met:"추첨",rent:"시장가",per:"소유권 취득",ch:"없음",dif:"매우 높음",note:"85㎡↑ 추첨비율↑",seoul:0},
+  {id:"hope",cat:"신혼희망타운",name:"신혼희망타운(LH)",iL:1.3,iLD:2,ast:354000,car:4563,re:null,met:"순위별",rent:"분양가상한제",per:"소유권 취득",ch:"2자녀↑ 1순위①",dif:"중간",note:"3기 신도시 중심",seoul:0,newlywed:1},
+];
+
+const PRI = {pvt_new:1,hope:2,pub_new:3,sh_js:4,pub_js1:5,pub_js2:6,pub_hap:7,pub_nat:8,pub_gen:9,pvt_gen:10};
+
+const SUPPLY = [
+  {name:"고덕강일 공공분양",area:"서울",units:1305,org:"SH",time:"2026 상반기",type:"공공분양"},
+  {name:"남양주 왕숙 3기",area:"경기",units:1868,org:"LH",time:"2026 1분기",type:"신혼희망타운"},
+  {name:"고양 창릉 3기",area:"경기",units:3881,org:"GH",time:"2026 하반기",type:"신혼희망타운"},
+  {name:"인천 계양 3기",area:"인천",units:1290,org:"iH",time:"2026 2분기",type:"신혼희망타운"},
+  {name:"평택 고덕 2기",area:"경기",units:5134,org:"LH",time:"2026 2~3분기",type:"민간분양"},
+  {name:"화성 동탄2",area:"경기",units:473,org:"LH",time:"2026 5월",type:"민간분양"},
+  {name:"광교 2기",area:"경기",units:600,org:"GH",time:"2026 중반",type:"민간분양"},
+  {name:"고양정발 S-01",area:"경기",units:494,org:"GH",time:"2026 3월",type:"민간분양"},
+  {name:"남양주 별내2",area:"경기",units:606,org:"GH",time:"2026 3월",type:"민간분양"},
+];
+
+const TARGETS = [
+  {area:"서울 강북권",detail:"도봉·노원·중랑·강북 재개발",comp:"20~40:1",suit:"경쟁 가능 구간",lv:1},
+  {area:"경기 평택",detail:"고덕국제신도시 민간",comp:"5~15:1",suit:"✓ 최우선 추천",lv:3},
+  {area:"화성 동탄2",detail:"동탄2 수시 민간",comp:"10~30:1",suit:"✓ 신생아+가점 유리",lv:2},
+  {area:"경기 수원",detail:"광교·영통·인계",comp:"15~35:1",suit:"✓ 신생아 우선 유리",lv:2},
+  {area:"경기 의정부",detail:"GTX-C 예정지",comp:"10~20:1",suit:"교통 호재 + 저렴",lv:1},
+  {area:"경기 남양주",detail:"왕숙·별내·다산",comp:"10~25:1",suit:"3기신도시 인근",lv:1},
+];
+
+const CC = {공공임대:"var(--green)",서울SH:"var(--purple)",공공분양:"var(--accent)",민영주택:"var(--orange)",신혼희망타운:"var(--pink)"};
+const CD = {공공임대:"var(--green-dim)",서울SH:"var(--purple-dim)",공공분양:"var(--accent-dim)",민영주택:"var(--orange-dim)",신혼희망타운:"var(--pink-dim)"};
+const TC = {신혼희망타운:"var(--pink)",민간분양:"var(--orange)",공공분양:"var(--accent)"};
+const TD = {신혼희망타운:"var(--pink-dim)",민간분양:"var(--orange-dim)",공공분양:"var(--accent-dim)"};
+
+let analysisResult = null;
+
+// ============================
+// UI HELPERS
+// ============================
+function sel(gid,btn){document.querySelectorAll('#'+gid+' .opt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function gv(gid){const a=document.querySelector('#'+gid+' .opt-btn.active');return a?a.dataset.value:''}
+function v(id){return document.getElementById(id).value.trim()}
+function n(id){return parseInt(document.getElementById(id).value)||0}
+function bg(text,color,bgc){return `<span class="badge" style="color:${color};background:${bgc}">${text}</span>`}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ============================
+// ANALYSIS ENGINE
+// ============================
+function runAnalysis() {
+  const res = v('residence')||'경기도';
+  const my = n('marriageYears');
+  const caRaw = v('childAges');
+  const ca = caRaw ? caRaw.split(',').map(s=>parseInt(s.trim())).filter(x=>!isNaN(x)) : [];
+  const it = gv('incomeTypeGroup');
+  const mi = n('monthlyIncome');
+  const re = n('realEstateValue');
+  const cv = n('carValue');
+  const ay = n('accountYears');
+  const ap = n('accountPayments');
+  const hl = gv('homelessGroup')==='예';
+  const dual = it==='맞벌이';
+  const seoul = res.includes('서울');
+  const newborn = ca.some(a=>a<=2);
+  const cc = ca.filter(a=>a>=0).length;
+  const tot = re+cv;
+  const first = ap>=24&&ay>=2;
+
+  const results = TYPES.map(t => {
+    let ok=true; const reasons=[]; const warnings=[];
+    if(!hl){ok=false;reasons.push('무주택 요건 미충족')}
+    if(t.newlywed&&my>7){ok=false;reasons.push('혼인 7년 초과')}
+    if(t.seoul&&!seoul){ok=false;reasons.push('서울 거주자만 가능')}
+    if(t.iL!==null){
+      let lim=t.iL;if(dual&&t.iLD)lim=t.iLD;
+      const la=Math.round(MI*lim);
+      if(mi>la){ok=false;reasons.push(`월소득 ${mi.toLocaleString()}만 > 기준 ${la.toLocaleString()}만 (중위${Math.round(lim*100)}%)`)}
+      else warnings.push(`소득 충족 (${Math.round(mi/la*100)}%)`)
+    } else warnings.push('소득기준 없음 ✓');
+    if(t.re!==null&&re>t.re){ok=false;reasons.push(`부동산 ${(re/10000).toFixed(1)}억 > ${(t.re/10000).toFixed(2)}억`)}
+    if(t.id==='hope'&&t.ast!==null&&tot>t.ast){ok=false;reasons.push('총자산 초과')}
+    if(t.car!==null&&cv>t.car){ok=false;reasons.push(`차량 ${cv.toLocaleString()}만 > ${t.car.toLocaleString()}만`)}
+
+    let score=null;
+    if(t.id==='pvt_new'){
+      let s=0;
+      s+=ap>=24?12:ap>=12?8:ap>=6?4:2;
+      s+=my<=2?3:my<=4?2:1;
+      s+=cc>=2?10:cc>=1?5:0;
+      s+=my>=5?5:my>=3?3:2;
+      const fam=1+(my>0?1:0)+cc;
+      s+=fam>=4?5:fam>=3?3:1;
+      score=s;
+    }
+    let hr=null;
+    if(t.id==='hope'&&ok) hr=cc>=2?'1순위①':cc>=1?'1순위②':'2순위';
+
+    return {...t,ok,reasons,warnings,score,first,newborn,hr,cc};
+  });
+
+  const eligible = results.filter(r=>r.ok).sort((a,b)=>(PRI[a.id]||99)-(PRI[b.id]||99));
+  const ineligible = results.filter(r=>!r.ok);
+  const eids = eligible.map(e=>e.id);
+  const recSupply = SUPPLY.map(s => {
+    let rec = false;
+    if(eids.includes('hope')&&s.type==='신혼희망타운') rec=true;
+    if(eids.includes('pvt_new')&&s.type==='민간분양') rec=true;
+    if(eids.includes('pub_new')&&s.type==='공공분양') rec=true;
+    return {...s,rec};
+  });
+  const pvtScore = eligible.find(e=>e.id==='pvt_new')?.score;
+
+  analysisResult = {eligible,ineligible,recSupply,pvtScore,first,newborn,cc,res};
+
+  // Update tab badges
+  const ne = document.getElementById('numEligible');
+  ne.textContent = eligible.length;
+  ne.style.color = 'var(--green)';
+  ne.style.background = 'var(--green-dim)';
+  ne.classList.add('show');
+
+  const ns = document.getElementById('numSupply');
+  ns.textContent = recSupply.filter(s=>s.rec).length;
+  ns.style.color = 'var(--accent)';
+  ns.style.background = 'var(--accent-dim)';
+  ns.classList.add('show');
+
+  renderTab2();
+  renderTab3();
+  renderTab4();
+  switchTab('tab2');
+}
+
+// ============================
+// TAB 2: 전략 분석
+// ============================
+function renderTab2() {
+  const d = analysisResult;
+  if(!d) return;
+  let h = '';
+
+  // Stats
+  h += `<div class="stats-grid">`;
+  [{i:'✓',l:'신청 가능',v:`${d.eligible.length}건`,c:'var(--green)'},{i:'✗',l:'신청 불가',v:`${d.ineligible.length}건`,c:'var(--red)'},{i:'🏗',l:'추천 단지',v:`${d.recSupply.filter(s=>s.rec).length}곳`,c:'var(--accent)'},{i:'★',l:'신혼 가점',v:d.pvtScore?`${d.pvtScore}점`:'—',c:'var(--orange)'}].forEach(s=>{
+    h+=`<div class="stat-card"><div class="stat-icon">${s.i}</div><div class="stat-value" style="color:${s.c}">${s.v}</div><div class="stat-label">${s.l}</div></div>`;
+  });
+  h += `</div>`;
+
+  // Eligible
+  if(d.eligible.length){
+    h += `<div class="sec-head"><div class="sec-icon" style="background:var(--green-dim)">🎯</div><h2>신청 가능 유형 <span style="color:var(--green)">우선순위 순</span></h2></div>`;
+    d.eligible.forEach((item,i) => {
+      const c=CC[item.cat]||'var(--accent)', cd=CD[item.cat]||'var(--accent-dim)';
+      const top=i<2;
+      h += `<div class="result-card ${top?'top':''}" onclick="this.classList.toggle('open')">`;
+      h += `<div class="result-head"><div class="result-left">
+        <div class="rank-num" style="background:${cd};color:${c}">${i+1}</div>
+        <div><div class="result-name">${item.name}</div><div class="badges">`;
+      h += bg(item.cat,c,cd);
+      if(item.newborn&&item.ch!=='없음') h+=bg('신생아 우선','var(--green)','var(--green-dim)');
+      if(item.hr) h+=bg(item.hr,'var(--pink)','var(--pink-dim)');
+      if(item.first) h+=bg('1순위','var(--accent)','var(--accent-dim)');
+      h += `</div></div></div><div class="arrow">▼</div></div>`;
+
+      if(item.score!==null){
+        const pct=Math.min(item.score/35*100,100);
+        const sc=pct>=75?'var(--green)':pct>=50?'var(--orange)':'var(--red)';
+        h+=`<div class="score-section"><div class="score-label">민간분양 신혼특공 가점 (35점 만점)</div><div class="score-row"><div class="score-track"><div class="score-fill" style="width:${pct}%;background:linear-gradient(90deg,${sc},${sc}cc)"></div></div><div class="score-num" style="color:${sc}">${item.score}/35점</div></div></div>`;
+      }
+
+      h += `<div class="detail-panel"><div class="detail-grid">`;
+      [['공급방식',item.met],['임대료/분양가',item.rent],['거주기간',item.per],['자녀혜택',item.ch],['난이도',item.dif],['비고',item.note]].forEach(([k,vv])=>{
+        h+=`<div><div class="detail-key">${k}</div><div class="detail-val">${vv}</div></div>`;
+      });
+      h += `</div>`;
+      if(item.warnings.length){
+        h+=`<div class="warn-tags">`;
+        item.warnings.forEach(w=>{h+=`<span class="warn-tag" style="color:var(--green);background:var(--green-dim)">✓ ${w}</span>`});
+        h+=`</div>`;
+      }
+      h += `</div></div>`;
+    });
+  }
+
+  // Ineligible
+  if(d.ineligible.length){
+    h += `<div style="margin-top:28px"><div class="sec-head"><div class="sec-icon" style="background:var(--red-dim)">⊘</div><h2 style="color:var(--text-dim)">신청 불가 유형 <span style="color:var(--red)">사유 안내</span></h2></div>`;
+    d.ineligible.forEach(item=>{
+      h+=`<div class="ineligible-card"><div class="ineligible-head"><div><span class="ineligible-name">${item.name}</span><span class="ineligible-cat">${item.cat}</span></div>${bg('불가','var(--red)','var(--red-dim)')}</div><div class="reason-tags">`;
+      item.reasons.forEach(r=>{h+=`<span class="warn-tag" style="color:var(--red);background:var(--red-dim)">✗ ${r}</span>`});
+      h+=`</div></div>`;
+    });
+    h += `</div>`;
+  }
+
+  h += `<div class="disclaimer">※ 본 분석은 2026년 기준 청약 규정을 반영한 참고용 자료입니다. 실제 청약 시 공고문을 반드시 확인하세요.<br>소득기준: 4인가구 기준중위소득 ${Math.round(MI*10000).toLocaleString()}원/월 기준</div>`;
+
+  document.getElementById('tab2Content').innerHTML = h;
+}
+
+// ============================
+// TAB 3: 공급 단지
+// ============================
+let supplyFilter = '전체';
+
+function renderTab3() {
+  const d = analysisResult;
+  if(!d) return;
+  let h = '';
+
+  h += `<div class="sec-head"><div class="sec-icon" style="background:var(--accent-dim)">🏗</div><h2>2026 수도권 공급 단지</h2></div>`;
+
+  const recCount = d.recSupply.filter(s=>s.rec).length;
+  const totalUnits = d.recSupply.reduce((a,s)=>a+s.units,0);
+  h += `<div class="supply-total">전체 <b>${SUPPLY.length}개 단지</b> · 총 <b>${totalUnits.toLocaleString()}호</b> · 내 조건 추천 <b>${recCount}곳</b></div>`;
+
+  // Filters
+  const types = ['전체','추천만','신혼희망타운','민간분양','공공분양'];
+  h += `<div class="supply-filter-bar" id="supplyFilters">`;
+  types.forEach(t => {
+    h += `<button class="supply-filter ${t===supplyFilter?'active':''}" onclick="filterSupply('${t}')">${t}</button>`;
+  });
+  h += `</div>`;
+
+  h += `<div class="supply-grid" id="supplyGrid">`;
+  d.recSupply.forEach((s,i) => {
+    const show = supplyFilter==='전체' || (supplyFilter==='추천만'&&s.rec) || supplyFilter===s.type;
+    if(!show) return;
+    const tc=TC[s.type]||'var(--accent)', td=TD[s.type]||'var(--accent-dim)';
+    h += `<div class="supply-card" style="position:relative;${s.rec?'border-color:rgba(34,211,238,.18)':''}">`;
+    if(s.rec) h+=`<div style="position:absolute;top:10px;right:12px;font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:4px">✓ 추천</div>`;
+    h += `<div class="supply-head"><div class="supply-name">${s.name}</div>${bg(s.type,tc,td)}</div>
+      <div class="supply-info">
+        <div><div class="supply-key">공급량</div><div class="supply-val">${s.units.toLocaleString()}호</div></div>
+        <div><div class="supply-key">기관</div><div class="supply-val">${s.org}</div></div>
+        <div><div class="supply-key">지역</div><div class="supply-val">${s.area}</div></div>
+        <div><div class="supply-key">시기</div><div class="supply-val">${s.time}</div></div>
+      </div></div>`;
+  });
+  h += `</div>`;
+
+  // Target areas table
+  h += `<div style="margin-top:28px"><div class="sec-head"><div class="sec-icon" style="background:var(--orange-dim)">📍</div><h2>민간분양 타깃 지역 분석</h2></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>지역</th><th>주요 단지</th><th>예상 경쟁률</th><th>적합성</th></tr></thead><tbody>`;
+  TARGETS.forEach(t=>{
+    const sc=t.lv===3?'var(--green)':t.lv===2?'var(--accent)':'var(--text-dim)';
+    h+=`<tr><td style="font-weight:700;color:var(--text)">${t.area}</td><td>${t.detail}</td><td style="color:var(--orange);font-weight:700">${t.comp}</td><td style="color:${sc};font-weight:600">${t.suit}</td></tr>`;
+  });
+  h += `</tbody></table></div></div>`;
+
+  document.getElementById('tab3Content').innerHTML = h;
+}
+
+function filterSupply(type) {
+  supplyFilter = type;
+  renderTab3();
+}
+
+// ============================
+// TAB 4: 로드맵
+// ============================
+function renderTab4() {
+  const d = analysisResult;
+  if(!d) return;
+  let h = '';
+
+  h += `<div class="sec-head"><div class="sec-icon" style="background:var(--purple-dim)">🗺</div><h2>2026~2028 맞춤 실행 로드맵</h2></div>`;
+  h += `<div class="sec-sub">체크박스를 눌러 완료한 항목을 관리하세요. 분석 결과 기반으로 생성된 맞춤 행동 계획입니다.</div>`;
+
+  const topNames = d.recSupply.filter(s=>s.rec).slice(0,3).map(s=>s.name).join(', ')||'평택·동탄·남양주';
+  const eligItems = d.eligible.slice(0,3).map(e=>{
+    let s=e.name;
+    if(e.hr) s+=` ${e.hr}`;
+    if(e.score) s+=` 가점 ${e.score}점`;
+    if(e.newborn&&e.ch!=='없음') s+=' — 신생아 우선 활용';
+    else s+=' — 적극 신청';
+    return s;
+  });
+
+  const steps = [
+    {s:1,p:'2026 상반기',t:'즉시 실행 — 준비 단계',c:'var(--accent)',items:[
+      '무주택 확정 증빙 준비 (주민등록등본·토지대장·건축물대장)',
+      '청약홈(applyhome.co.kr) 앱 설치 → 관심지역 알림 ON',
+      'LH청약플러스(apply.lh.or.kr) 공고 수신 설정',
+      '청약통장 납입 유지 — 절대 중단 금지',
+      `관심 지역 선정: ${topNames}`,
+    ]},
+    {s:2,p:'2026 1~2분기',t:'분양 도전 — 동시 공략',c:'var(--green)',items:
+      eligItems.length?[...eligItems,'소득 기준 충족 여부 주기적 점검']:['해당 유형 없음 — 조건 변경 검토']
+    },
+    {s:3,p:'2026 하반기',t:'확장 공략 — 하반기 물량',c:'var(--orange)',items:[
+      '고양 창릉 3기 신혼희망타운 (GTX-A 수혜, 3,881호 대규모)',
+      '서울 강북권 민간분양 재개발 단지 모니터링',
+      '가점 관리 — 무주택 기간 누적으로 가점 상승 확인',
+      '추가 자녀 계획 시 가점 +5점 효과 검토',
+    ]},
+    {s:4,p:'2027~2028년',t:'장기 전략 — 기간 활용 극대화',c:'var(--purple)',items:[
+      '신혼 특공 만료 전 분양 확보 (혼인 7년 이내)',
+      '일반공급 가점 축적 → 40점대 진입 시 경기 외곽 공략',
+      '자산 구조 변경 검토 (공공임대 재진입 가능성)',
+      '전세 유지하며 분양 청약 지속 병행',
+    ]},
+  ];
+
+  h += `<div style="padding-left:2px">`;
+  steps.forEach((r,ri)=>{
+    h+=`<div class="roadmap-step" style="animation:slideIn .5s ease ${ri*.15}s both">
+      <div class="roadmap-line">
+        <div class="roadmap-dot" style="background:color-mix(in srgb,${r.c} 15%,transparent);border-color:${r.c};color:${r.c}">${r.s}</div>
+        ${ri<steps.length-1?'<div class="roadmap-connector"></div>':''}
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-period" style="color:${r.c}">${r.p}</div>
+        <div class="roadmap-title">${r.t}</div>
+        <div class="roadmap-items">`;
+    r.items.forEach((item,ii)=>{
+      const uid=`chk_${ri}_${ii}`;
+      h+=`<div class="roadmap-item" style="padding-right:40px">
+        <span style="position:absolute;left:14px;color:${r.c};font-weight:900;font-size:15px">›</span>
+        ${item}
+        <div class="roadmap-check" id="${uid}" onclick="event.stopPropagation();toggleCheck('${uid}')"></div>
+      </div>`;
+    });
+    h+=`</div></div></div>`;
+  });
+  h+=`</div>`;
+
+  h += `<div class="disclaimer">※ 본 로드맵은 입력된 개인 조건을 기반으로 자동 생성된 참고용 자료입니다.<br>실제 공고 일정은 LH·SH·GH 공식 사이트에서 반드시 확인하세요.</div>`;
+
+  document.getElementById('tab4Content').innerHTML = h;
+}
+
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  if(el.classList.contains('checked')){
+    el.classList.remove('checked');
+    el.textContent = '';
+  } else {
+    el.classList.add('checked');
+    el.textContent = '✓';
+  }
+}
+</script>
+</body>
+</html>
