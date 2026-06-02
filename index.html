@@ -314,6 +314,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .sync-big-btn:active{transform:scale(.97)}
 .sync-big-btn:disabled{opacity:.5;cursor:not-allowed}
 .sync-status-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);margin-top:12px;font-size:12px}
+
+.more-menu-item{display:block;width:100%;padding:11px 16px;background:transparent;border:none;color:var(--text);font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;text-align:left;cursor:pointer;transition:background .15s}
+.more-menu-item:hover{background:rgba(255,255,255,.07)}
+.more-menu-item+.more-menu-item{border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -374,14 +378,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div class="tb-right">
-      <div class="sync-indicator topbar-sync" id="syncIndicator" onclick="cloudPull()" title="클라우드에서 불러오기">
+      <div class="sync-indicator" id="syncIndicator" title="동기화 상태">
         <div class="sync-dot none" id="syncDot"></div>
         <span class="sync-text" id="syncText">미설정</span>
       </div>
-      <button class="btn btn-ghost btn-sm topbar-sync" onclick="cloudPush()" title="클라우드에 저장">☁️ 저장</button>
-      <button class="btn btn-ghost btn-sm" onclick="showOCRModal()" title="사진/스캔으로 데이터 입력">📷 스캔</button>
-      <button class="btn btn-success btn-sm" onclick="excelBackup()">📊 엑셀</button>
-      <button class="btn btn-amber btn-sm" onclick="jsonBackup()">📦 JSON</button>
+      <button class="btn btn-primary btn-sm" onclick="quickSync()" id="quickSyncBtn">☁️ 동기화</button>
+      <div class="more-menu-wrap" style="position:relative">
+        <button class="btn btn-ghost btn-sm" onclick="toggleMoreMenu()">⋮</button>
+        <div id="moreMenu" style="display:none;position:absolute;right:0;top:44px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);min-width:160px;z-index:100;box-shadow:var(--shadow)">
+          <button class="more-menu-item" onclick="showOCRModal();closeMoreMenu()">📷 사진 스캔 입력</button>
+          <button class="more-menu-item" onclick="excelBackup();closeMoreMenu()">📊 엑셀 백업</button>
+          <button class="more-menu-item" onclick="jsonBackup();closeMoreMenu()">📦 JSON 백업</button>
+          <button class="more-menu-item" onclick="document.getElementById('restoreFile').click();closeMoreMenu()">🔄 데이터 복원</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -681,29 +691,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="panel">
         <div class="panel-head"><div class="panel-head-left"><span class="ph-icon">💾</span><div><div class="ph-title">백업 수단</div></div></div></div>
         <div class="panel-body">
-          <div class="backup-list">
-            <div class="backup-item">
-              <div class="bi-left"><div class="bi-icon" style="background:rgba(16,185,129,.15)">📊</div><div><div class="bi-name">엑셀 백업 (.xlsx)</div><div class="bi-desc">전체 시트 자동 생성</div></div></div>
-              <button class="btn btn-success btn-sm" onclick="excelBackup()">백업</button>
-            </div>
-            <div class="backup-item">
-              <div class="bi-left"><div class="bi-icon" style="background:rgba(245,158,11,.15)">📦</div><div><div class="bi-name">JSON 전체 백업</div><div class="bi-desc">모든 데이터를 JSON으로 저장</div></div></div>
-              <button class="btn btn-amber btn-sm" onclick="jsonBackup()">백업</button>
-            </div>
-            <div class="backup-item">
-              <div class="bi-left"><div class="bi-icon" style="background:rgba(59,130,246,.15)">☁️</div><div><div class="bi-name">Google Drive 자동 업로드</div><div class="bi-desc">Apps Script URL 등록 후 사용</div></div></div>
-              <button class="btn btn-primary btn-sm" onclick="driveBackup()">전송</button>
-            </div>
-            <div class="backup-item" style="border-bottom:none">
-              <div class="bi-left"><div class="bi-icon" style="background:rgba(139,92,246,.15)">🔄</div><div><div class="bi-name">JSON 복원</div><div class="bi-desc">백업 파일로 데이터 복원</div></div></div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreData()">
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('restoreFile').click()">파일 선택</button>
-              </div>
+          <div class="btn-group" style="flex-direction:column;gap:10px">
+            <button class="btn btn-success btn-full" onclick="excelBackup()">📊 엑셀 백업 (.xlsx) 다운로드</button>
+            <button class="btn btn-amber btn-full" onclick="jsonBackup()">📦 JSON 전체 백업 다운로드</button>
+            <button class="btn btn-primary btn-full" onclick="driveBackup()">☁️ Google Drive 전송</button>
+            <div style="display:flex;gap:8px">
+              <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreData()">
+              <button class="btn btn-ghost btn-full" onclick="document.getElementById('restoreFile').click()">🔄 JSON 파일로 복원</button>
             </div>
           </div>
-          <div class="divider"></div>
-          <div class="flex jb ac fs12 text-muted"><span>마지막 백업</span><span class="mono fw7" id="lastBackup">없음</span></div>
+          <div class="flex jb ac fs12 text-muted mt12"><span>마지막 백업</span><span class="mono fw7" id="lastBackup">없음</span></div>
         </div>
       </div>
       <div class="panel">
@@ -754,7 +751,6 @@ function sendDailyBriefing() {
           <div class="divider"></div>
           <div class="notice info mb12">샘플 데이터로 앱 기능을 미리 확인할 수 있습니다.</div>
           <button class="btn btn-gold btn-full mb8" onclick="loadMyPortfolio()">📊 실제 포트폴리오 불러오기 (44종목)</button>
-          <button class="btn btn-ghost btn-full mb8" onclick="loadSample()">📦 샘플 데이터 불러오기</button>
           <div class="notice warn mb12 mt8">전체 초기화는 되돌릴 수 없습니다.</div>
           <button class="btn btn-danger btn-full" onclick="clearAll()">🗑️ 전체 데이터 초기화</button>
         </div>
@@ -808,9 +804,7 @@ function sendDailyBriefing() {
 <!-- ══ MOBILE BOTTOM NAV ══ -->
 <nav class="mobile-nav">
   <button class="mob-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)"><span class="m-ic">🏠</span><span class="m-lb">홈</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="assets" onclick="switchTab('assets',this)"><span class="m-ic">🏦</span><span class="m-lb">자산</span><div class="mob-dot"></div></button>
   <button class="mob-btn" data-tab="portfolio" onclick="switchTab('portfolio',this)"><span class="m-ic">📈</span><span class="m-lb">종목</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="cashflow" onclick="switchTab('cashflow',this)"><span class="m-ic">💸</span><span class="m-lb">현금</span><div class="mob-dot"></div></button>
   <button class="mob-btn" data-tab="dividend" onclick="switchTab('dividend',this)"><span class="m-ic">📅</span><span class="m-lb">배당</span><div class="mob-dot"></div></button>
   <button class="mob-btn" data-tab="inheritance" onclick="switchTab('inheritance',this)"><span class="m-ic">🏛️</span><span class="m-lb">증여</span><div class="mob-dot"></div></button>
   <button class="mob-btn" data-tab="settings" onclick="switchTab('settings',this)"><span class="m-ic">⚙️</span><span class="m-lb">설정</span><div class="mob-dot"></div></button>
@@ -1570,6 +1564,33 @@ function render() {
   if (hasToken) { showSyncReady(); } else { showSyncSetup(); }
 }
 
+
+
+// ══════════════════════════════════
+// QUICK SYNC & MORE MENU
+// ══════════════════════════════════
+async function quickSync() {
+  const token = getGhToken();
+  if (!token) {
+    switchTab('settings', document.querySelector('[data-tab="settings"]'));
+    toast('설정에서 GitHub 토큰을 입력하세요', 'error');
+    return;
+  }
+  const btn = document.getElementById('quickSyncBtn');
+  btn.textContent = '⏳ 동기화 중...'; btn.disabled = true;
+  await cloudPush(true);
+  btn.textContent = '☁️ 동기화'; btn.disabled = false;
+  toast('동기화 완료 ✓', 'success');
+}
+
+function toggleMoreMenu() {
+  const m = document.getElementById('moreMenu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function closeMoreMenu() { document.getElementById('moreMenu').style.display = 'none'; }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.more-menu-wrap')) closeMoreMenu();
+});
 
 // ══════════════════════════════════
 // OCR (Tesseract.js)
