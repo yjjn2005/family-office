@@ -762,7 +762,7 @@ function sendDailyBriefing() {
           <span class="ph-badge blue">GitHub 기반</span>
         </div>
         <div class="panel-body">
-          <div id="syncTokenSetup">
+          <div id="syncTokenSetup" style="display:none">
             <div class="notice info mb16" style="line-height:1.8">
               <strong>최초 1회만 설정:</strong> GitHub 토큰 입력 후 저장<br>
               <span class="text-muted fs11">토큰: github.com → Settings → Developer settings → Personal access tokens → <a href="https://github.com/settings/tokens/new?scopes=gist&description=FamilyOfficeSync" target="_blank" style="color:#60a5fa">발급 (gist 권한)</a></span>
@@ -774,20 +774,27 @@ function sendDailyBriefing() {
             <button class="btn btn-primary btn-full" onclick="saveGhToken()">✓ 저장 (이후 1버튼 동기화)</button>
           </div>
 
-          <div id="syncReadyBox" style="display:none">
+          <div id="syncReadyBox">
             <button class="sync-big-btn push mb12" id="syncPushBig" onclick="cloudPush()">
-              <span style="font-size:22px">⬆</span>
-              <span>이 기기 → 클라우드 저장</span>
+              <span style="font-size:22px">⬆</span><span>지금 동기화 (저장)</span>
             </button>
-            <button class="sync-big-btn pull" id="syncPullBig" onclick="cloudPull()">
-              <span style="font-size:22px">⬇</span>
-              <span>클라우드 → 이 기기 불러오기</span>
+            <button class="sync-big-btn pull mb12" id="syncPullBig" onclick="cloudPull()">
+              <span style="font-size:22px">⬇</span><span>클라우드에서 불러오기</span>
             </button>
+            <!-- Share URL for other devices -->
+            <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:var(--r-sm);padding:14px;margin-bottom:12px">
+              <div class="fs12 fw7 text-green mb8">📲 다른 기기 연동 — 아래 버튼으로 URL 복사 후 다른 기기에서 열기</div>
+              <button class="btn btn-success btn-full btn-sm" onclick="copyShareUrl()">🔗 다른 기기용 공유 URL 복사</button>
+              <div id="shareUrlDisplay" style="display:none;margin-top:10px">
+                <label class="form-label">공유 URL (복사해서 다른 기기에서 열기)</label>
+                <input class="form-input" id="shareUrlText" readonly onclick="this.select()" style="font-size:11px;font-family:monospace">
+              </div>
+              <div class="fs11 text-muted mt8">URL을 열기만 하면 다른 기기에서 자동으로 동기화됩니다</div>
+            </div>
             <div class="sync-status-bar">
               <span class="text-muted">마지막 동기화</span>
               <span class="mono fw7 text-green" id="lastSync">없음</span>
             </div>
-            <div class="notice success fs11 mt12">💡 데이터 수정 후 ⬆ 저장 → 다른 기기에서 ⬇ 불러오기 클릭</div>
             <div class="divider"></div>
             <button class="btn btn-ghost btn-xs" onclick="resetGhToken()" style="opacity:.5">토큰 재설정</button>
           </div>
@@ -940,10 +947,7 @@ let _syncTimer = null;
 function save() {
   localStorage.setItem(KEY, JSON.stringify(D));
   render();
-  if (getGhToken()) {
-    clearTimeout(_syncTimer);
-    _syncTimer = setTimeout(() => cloudPush(true), 3000);
-  }
+  autoSync();
 }
 function uid() { return crypto.randomUUID(); }
 const today = new Date().toISOString().slice(0, 10);
@@ -974,122 +978,146 @@ function toast(msg, type = '') {
 }
 
 // ══════════════════════════════════
-// CLOUD SYNC (GitHub Gist)
 // ══════════════════════════════════
-const GIST_ID = "53beceaf792b069d2c3ac405f5a0afa6";
-const GIST_FILE = "familyoffice_sync.json";
+// AUTO SYNC - URL hash token delivery
+// 첫 기기: 설정에서 토큰 1회 입력 → 공유 URL 생성
+// 다른 기기: 공유 URL 열기만 하면 자동 동기화
+// ══════════════════════════════════
+const _G = "53beceaf792b069d2c3ac405f5a0afa6";
+const _F = "familyoffice_sync.json";
 
-function getGhToken() { return localStorage.getItem('fo_gh_token') || ''; }
+// Token: stored in localStorage, never in source code
+// First device: enters token in settings
+// Other devices: opens shared URL with #t= hash
+function _tk() { return localStorage.getItem('fo_sync_token') || ''; }
+function _stk(t) { localStorage.setItem('fo_sync_token', t); }
 
-function saveGhToken() {
-  const t = document.getElementById('ghTokenInput').value.trim();
-  if (!t || !t.startsWith('ghp_')) return toast('올바른 GitHub 토큰을 입력하세요 (ghp_...)', 'error');
-  localStorage.setItem('fo_gh_token', t);
-  showSyncReady();
-  toast('토큰 저장 완료 ✓ 이제 1버튼으로 동기화됩니다', 'success');
-}
+// Extract token from URL hash on page load (e.g. #t=ghp_xxx)
+(function extractTokenFromUrl() {
+  const m = location.hash.match(/[#&]t=([^&]+)/);
+  if (m) {
+    _stk(decodeURIComponent(m[1]));
+    // Clean URL without exposing token in browser history
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+})();
 
-function resetGhToken() {
-  if (!confirm('토큰을 초기화하시겠습니까?')) return;
-  localStorage.removeItem('fo_gh_token');
-  showSyncSetup();
-}
+let _syncTimer = null, _lastHash = '';
+const _dHash = d => (d.stocks||[]).length + '_' + (d.assets||[]).length + '_' + (JSON.stringify(d).length);
 
-function showSyncReady() {
-  const el = document.getElementById('syncReadyBox');
-  const el2 = document.getElementById('syncTokenSetup');
-  if (el) el.style.display = 'block';
-  if (el2) el2.style.display = 'none';
-}
-function showSyncSetup() {
-  const el = document.getElementById('syncReadyBox');
-  const el2 = document.getElementById('syncTokenSetup');
-  if (el) el.style.display = 'none';
-  if (el2) el2.style.display = 'block';
-}
-
-function setSyncStatus(status) {
+function setSyncStatus(s) {
   const dot = document.getElementById('syncDot');
   const txt = document.getElementById('syncText');
   if (!dot) return;
-  dot.className = 'sync-dot ' + status;
-  const map = { none:'미설정', ready:'준비됨', ok:'동기화됨', syncing:'동기화 중', error:'오류' };
-  txt.textContent = map[status] || '미설정';
-  // Also update big buttons
-  const pb = document.getElementById('syncPushBig');
-  const plb = document.getElementById('syncPullBig');
-  if (status === 'syncing') {
-    if (pb) pb.disabled = true;
-    if (plb) plb.disabled = true;
-  } else {
-    if (pb) pb.disabled = false;
-    if (plb) plb.disabled = false;
-  }
+  dot.className = 'sync-dot ' + s;
+  const map = {none:'미설정', ready:'연결됨', ok:'동기화됨', syncing:'동기화 중', error:'오류'};
+  txt.textContent = map[s] || '미설정';
 }
 
 async function cloudPush(silent = false) {
-  const token = getGhToken();
-  if (!token) { toast('설정 탭에서 GitHub 토큰을 입력하세요', 'error'); switchTab('settings', document.querySelector('[data-tab="settings"]')); return; }
+  const token = _tk();
+  if (!token) { if (!silent) { toast('설정 탭에서 동기화 설정을 완료하세요', 'error'); } return; }
   setSyncStatus('syncing');
-  if (!silent) {
-    const btn = document.getElementById('syncPushBig');
-    if (btn) { btn.innerHTML = '<span>⏳</span><span>저장 중...</span>'; }
-  }
+  const btn = document.getElementById('quickSyncBtn');
+  if (btn && !silent) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
-    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    await fetch('https://api.github.com/gists/' + _G, {
       method: 'PATCH',
-      headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(D) } } })
+      headers: {'Authorization': 'token ' + token, 'Content-Type': 'application/json'},
+      body: JSON.stringify({files: {[_F]: {content: JSON.stringify(D)}}})
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
     D.settings.lastSync = new Date().toLocaleString('ko-KR');
+    _lastHash = _dHash(D);
     localStorage.setItem(KEY, JSON.stringify(D));
     setSyncStatus('ok');
     const ls = document.getElementById('lastSync');
     if (ls) ls.textContent = D.settings.lastSync;
-    if (!silent) {
-      const btn = document.getElementById('syncPushBig');
-      if (btn) btn.innerHTML = '<span>⬆</span><span>이 기기 → 클라우드 저장</span>';
-      toast('클라우드 저장 완료 ✓', 'success');
-    }
+    if (!silent && btn) { btn.textContent = '☁️ 동기화'; btn.disabled = false; }
+    if (!silent) toast('동기화 완료 ✓', 'success');
   } catch(e) {
     setSyncStatus('error');
-    const btn = document.getElementById('syncPushBig');
-    if (btn) btn.innerHTML = '<span>⬆</span><span>이 기기 → 클라우드 저장</span>';
-    if (!silent) toast('저장 실패: ' + e.message, 'error');
+    if (!silent && btn) { btn.textContent = '☁️ 동기화'; btn.disabled = false; }
+    if (!silent) toast('동기화 실패: ' + e.message, 'error');
   }
 }
 
 async function cloudPull() {
-  const token = getGhToken();
-  if (!token) { toast('설정 탭에서 GitHub 토큰을 입력하세요', 'error'); switchTab('settings', document.querySelector('[data-tab="settings"]')); return; }
+  const token = _tk();
+  if (!token) return;
   setSyncStatus('syncing');
-  const btn = document.getElementById('syncPullBig');
-  if (btn) btn.innerHTML = '<span>⏳</span><span>불러오는 중...</span>';
-  toast('클라우드에서 불러오는 중...', '');
   try {
-    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      headers: { 'Authorization': `token ${token}` }
+    const res = await fetch('https://api.github.com/gists/' + _G, {
+      headers: {'Authorization': 'token ' + token}
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    const raw = data.files[GIST_FILE]?.content;
-    if (!raw) throw new Error('동기화 데이터 없음');
-    const remote = JSON.parse(raw);
-    if (!remote._init) {
-      D = Object.assign({}, DEF, remote);
-      D.settings = Object.assign({}, DEF.settings, remote.settings || {});
-      localStorage.setItem(KEY, JSON.stringify(D));
-      render();
+    const raw = data.files[_F]?.content;
+    if (raw) {
+      const remote = JSON.parse(raw);
+      if (!remote._init && (remote.stocks||[]).length > 0) {
+        D = Object.assign({}, DEF, remote);
+        D.settings = Object.assign({}, DEF.settings, remote.settings || {});
+        localStorage.setItem(KEY, JSON.stringify(D));
+        _lastHash = _dHash(D);
+        render();
+      }
     }
     setSyncStatus('ok');
-    if (btn) btn.innerHTML = '<span>⬇</span><span>클라우드 → 이 기기 불러오기</span>';
-    toast('불러오기 완료 ✓', 'success');
-  } catch(e) {
-    setSyncStatus('error');
-    if (btn) btn.innerHTML = '<span>⬇</span><span>클라우드 → 이 기기 불러오기</span>';
-    toast('불러오기 실패: ' + e.message, 'error');
-  }
+  } catch(e) { setSyncStatus('error'); }
+}
+
+function autoSync() {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    if (_tk() && _dHash(D) !== _lastHash) cloudPush(true);
+  }, 4000);
+}
+
+// ── Sync Settings UI functions ──
+function saveGhToken() {
+  const t = document.getElementById('ghTokenInput').value.trim();
+  if (!t || !t.startsWith('ghp_')) return toast('올바른 GitHub 토큰을 입력하세요 (ghp_...)', 'error');
+  _stk(t);
+  showSyncReady();
+  setSyncStatus('ready');
+  toast('동기화 설정 완료 ✓', 'success');
+  // Push current data to cloud immediately
+  setTimeout(() => cloudPush(false), 500);
+}
+
+function resetGhToken() {
+  if (!confirm('동기화 설정을 초기화하시겠습니까?')) return;
+  localStorage.removeItem('fo_sync_token');
+  showSyncSetup();
+  setSyncStatus('none');
+}
+
+function getShareUrl() {
+  const token = _tk();
+  if (!token) return '';
+  return location.origin + location.pathname + '#t=' + encodeURIComponent(token);
+}
+
+function copyShareUrl() {
+  const url = getShareUrl();
+  if (!url) return toast('먼저 동기화 설정을 완료하세요', 'error');
+  navigator.clipboard.writeText(url).then(() => {
+    toast('공유 URL 복사됨 ✓ 다른 기기에서 이 URL을 열면 자동 동기화!', 'success');
+  }).catch(() => {
+    document.getElementById('shareUrlDisplay').style.display = 'block';
+    document.getElementById('shareUrlText').value = url;
+  });
+}
+
+function showSyncReady() {
+  const a = document.getElementById('syncReadyBox'), b = document.getElementById('syncTokenSetup');
+  if (a) a.style.display = 'block'; if (b) b.style.display = 'none';
+  const su = document.getElementById('shareUrlDisplay');
+  if (su) su.style.display = 'none';
+}
+function showSyncSetup() {
+  const a = document.getElementById('syncReadyBox'), b = document.getElementById('syncTokenSetup');
+  if (a) a.style.display = 'none'; if (b) b.style.display = 'block';
 }
 
 // ══════════════════════════════════
@@ -1559,7 +1587,7 @@ function render() {
   document.getElementById('autoBackup').checked = !!D.settings.autoBackup;
   document.getElementById('emailInput').value = D.settings.email || '';
   // Show sync UI based on token presence
-  const hasToken = !!getGhToken();
+  const hasToken = !!_tk();
   setSyncStatus(hasToken ? (D.settings.lastSync ? 'ok' : 'ready') : 'none');
   if (hasToken) { showSyncReady(); } else { showSyncSetup(); }
 }
@@ -1894,6 +1922,11 @@ if (D.stocks.length === 0 && D.assets.length === 0) { _applyPortfolioData(); }
 render();
 document.getElementById('giftDate').value = today;
 if (D.settings.autoBackup) setTimeout(() => excelBackup(), 1500);
+// Auto-pull from cloud on page load
+if (_tk()) setTimeout(() => cloudPull(), 1200);
+setSyncStatus(_tk() ? 'ready' : 'none');
+// 페이지 로드 시 자동 동기화 (모든 기기에서 최신 데이터 로드)
+setTimeout(() => cloudPull(), 1200);
 
 // Service Worker
 if ('serviceWorker' in navigator) {
