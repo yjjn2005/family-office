@@ -272,8 +272,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 }
 
 /* ─── BOTTOM NAV ─── */
-.mobile-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,26,.96);border-top:1px solid var(--border);flex-direction:row;padding:6px 0 calc(6px + var(--safe-b));z-index:200;backdrop-filter:blur(20px)}
-.mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 2px;border:none;background:transparent;color:var(--muted);transition:color .2s;font-family:'Noto Sans KR',sans-serif}
+.mobile-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,26,.96);border-top:1px solid var(--border);flex-direction:row;padding:6px 0 calc(6px + var(--safe-b));z-index:200;backdrop-filter:blur(20px);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mobile-nav::-webkit-scrollbar{display:none}
+.mob-btn{flex:0 0 auto;min-width:60px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 6px;border:none;background:transparent;color:var(--muted);transition:color .2s;font-family:'Noto Sans KR',sans-serif}
 .mob-btn.active{color:var(--gold2)}
 .mob-btn .m-ic{font-size:20px;transition:transform .2s}
 .mob-btn.active .m-ic{transform:translateY(-2px)}
@@ -810,11 +811,15 @@ function sendDailyBriefing() {
 
 <!-- ══ MOBILE BOTTOM NAV ══ -->
 <nav class="mobile-nav">
-  <button class="mob-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)"><span class="m-ic">🏠</span><span class="m-lb">홈</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="portfolio" onclick="switchTab('portfolio',this)"><span class="m-ic">📈</span><span class="m-lb">종목</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="dividend" onclick="switchTab('dividend',this)"><span class="m-ic">📅</span><span class="m-lb">배당</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="inheritance" onclick="switchTab('inheritance',this)"><span class="m-ic">🏛️</span><span class="m-lb">증여</span><div class="mob-dot"></div></button>
-  <button class="mob-btn" data-tab="settings" onclick="switchTab('settings',this)"><span class="m-ic">⚙️</span><span class="m-lb">설정</span><div class="mob-dot"></div></button>
+  <button class="mob-btn active" data-tab="dashboard"   onclick="switchTab('dashboard',this)">  <span class="m-ic">🏠</span><span class="m-lb">홈</span>    <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="assets"             onclick="switchTab('assets',this)">     <span class="m-ic">🏦</span><span class="m-lb">자산</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="portfolio"          onclick="switchTab('portfolio',this)">  <span class="m-ic">📈</span><span class="m-lb">종목</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="cashflow"           onclick="switchTab('cashflow',this)">   <span class="m-ic">💸</span><span class="m-lb">현금</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="dividend"           onclick="switchTab('dividend',this)">   <span class="m-ic">📅</span><span class="m-lb">배당</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="retirement"         onclick="switchTab('retirement',this)"> <span class="m-ic">🌅</span><span class="m-lb">은퇴</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="inheritance"        onclick="switchTab('inheritance',this)"><span class="m-ic">🏛️</span><span class="m-lb">증여</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="backup"             onclick="switchTab('backup',this)">     <span class="m-ic">💾</span><span class="m-lb">백업</span>   <div class="mob-dot"></div></button>
+  <button class="mob-btn" data-tab="settings"           onclick="switchTab('settings',this)">   <span class="m-ic">⚙️</span><span class="m-lb">설정</span>   <div class="mob-dot"></div></button>
 </nav>
 
 <!-- PWA Install Banner -->
