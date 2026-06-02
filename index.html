@@ -932,8 +932,86 @@ function sendDailyBriefing() {
 <div class="toast" id="toast"></div>
 
 <script>
+function uid() { return crypto.randomUUID(); }
+
 // ══════════════════════════════════
-// DATA
+// DEFAULT DATA
+// ══════════════════════════════════
+const DEFAULT_STOCKS = [
+  {ticker:'SCHD', name:'Schwab US Dividend ETF', amount:986344258, yieldRate:3.5, category:'해외ETF', account:'해외증권'},
+  {ticker:'LS일렉트릭', name:'LS ELECTRIC', amount:291007500, yieldRate:1.5, category:'국내주식', account:'일반'},
+  {ticker:'로보티즈', name:'ROBOTIS', amount:234090000, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'PLUS고배당주', name:'PLUS 고배당주', amount:188141160, yieldRate:4.0, category:'국내ETF', account:'ISA'},
+  {ticker:'두산에너빌리티', name:'두산에너빌리티', amount:145800000, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'KODEX삼성SK', name:'KODEX 삼성전자SK하이닉스', amount:143485450, yieldRate:1.0, category:'국내ETF', account:'ISA'},
+  {ticker:'브이티', name:'브이티(VT GMP)', amount:123756360, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'삼성전자', name:'삼성전자', amount:94090500, yieldRate:2.0, category:'국내주식', account:'일반'},
+  {ticker:'GOOGL', name:'Alphabet Inc.', amount:87174473, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'TIGER반도체10', name:'TIGER 반도체TOP10', amount:77554565, yieldRate:0.5, category:'국내ETF', account:'ISA'},
+  {ticker:'소프트뱅크', name:'소프트뱅크 그룹', amount:54065794, yieldRate:1.0, category:'해외주식', account:'해외증권'},
+  {ticker:'현대차', name:'현대자동차', amount:51030000, yieldRate:3.0, category:'국내주식', account:'일반'},
+  {ticker:'IONQ', name:'IonQ Inc.', amount:44791242, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'국고22-5', name:'국고03375-3206(22-5)', amount:42079370, yieldRate:3.375, category:'채권ETF', account:'IRP'},
+  {ticker:'TSLA', name:'Tesla Inc.', amount:39003866, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'TIGER코배다', name:'TIGER 코리아배당다우존스', amount:34345440, yieldRate:4.0, category:'국내ETF', account:'ISA'},
+  {ticker:'MSFT', name:'Microsoft Corp.', amount:33719089, yieldRate:0.8, category:'해외주식', account:'해외증권'},
+  {ticker:'국고22-9', name:'국고03125-5209(22-9)', amount:33518360, yieldRate:3.125, category:'채권ETF', account:'IRP'},
+  {ticker:'TIGER코TOP10', name:'TIGER 코리아TOP10', amount:31491200, yieldRate:1.0, category:'국내ETF', account:'ISA'},
+  {ticker:'국고22-11', name:'국고03250-4209(22-11)', amount:31339525, yieldRate:3.25, category:'채권ETF', account:'IRP'},
+  {ticker:'SOL배당채혼합', name:'SOL 미국배당미국채혼합50', amount:23630775, yieldRate:3.5, category:'해외ETF', account:'ISA'},
+  {ticker:'AAPL', name:'Apple Inc.', amount:18719668, yieldRate:0.5, category:'해외주식', account:'해외증권'},
+  {ticker:'LG에너지솔루션', name:'LG에너지솔루션', amount:15487500, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'국일제지', name:'국일제지', amount:13706850, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'TIGER미배다', name:'TIGER 미국배당다우존스', amount:12524265, yieldRate:3.0, category:'국내ETF', account:'ISA'},
+  {ticker:'SK리츠', name:'SK리츠', amount:11988800, yieldRate:5.0, category:'리츠', account:'ISA'},
+  {ticker:'ACESPX', name:'ACE 미국S&P500', amount:10872680, yieldRate:0.5, category:'국내ETF', account:'ISA'},
+  {ticker:'ACENDX', name:'ACE 미국나스닥100', amount:10539000, yieldRate:0.3, category:'국내ETF', account:'ISA'},
+  {ticker:'롯데리츠', name:'롯데리츠', amount:10189035, yieldRate:5.5, category:'리츠', account:'ISA'},
+  {ticker:'TIGERNDX', name:'TIGER 미국나스닥100', amount:9604215, yieldRate:0.3, category:'국내ETF', account:'ISA'},
+  {ticker:'국고19-6', name:'국고01125-3909(19-6)', amount:9200765, yieldRate:1.125, category:'채권ETF', account:'IRP'},
+  {ticker:'카이노스메드', name:'카이노스메드', amount:8638389, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'O', name:'Realty Income Corp.', amount:6169455, yieldRate:5.5, category:'리츠', account:'해외증권'},
+  {ticker:'TWST', name:'Twist Bioscience', amount:5359057, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'CRCL', name:'Circle Internet Group', amount:4644027, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'TIGERSPX', name:'TIGER 미국S&P500', amount:4278000, yieldRate:0.5, category:'국내ETF', account:'ISA'},
+  {ticker:'TIGERDJI30', name:'TIGER 미국다우존스30', amount:3754000, yieldRate:1.5, category:'국내ETF', account:'ISA'},
+  {ticker:'CRSP', name:'CRISPR Therapeutics', amount:3605848, yieldRate:0, category:'해외주식', account:'해외증권'},
+  {ticker:'1Q우주항공', name:'1Q 미국우주항공테크', amount:2595180, yieldRate:0, category:'국내ETF', account:'ISA'},
+  {ticker:'맥쿼리인프라', name:'맥쿼리인프라', amount:2389280, yieldRate:5.0, category:'리츠', account:'ISA'},
+  {ticker:'에이피알', name:'에이피알(APR)', amount:2005000, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'일진하이솔루스', name:'일진하이솔루스', amount:146630, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'SK디스커버리', name:'SK디스커버리', amount:47100, yieldRate:0, category:'국내주식', account:'일반'},
+  {ticker:'SK케미칼', name:'SK케미칼', amount:41850, yieldRate:0, category:'국내주식', account:'일반'},
+];
+
+const DEFAULT_ASSETS = [
+  {name:'투자포트폴리오(한국투자증권)', type:'주식/ETF', owner:'본인', amount:2956965521, note:'2026-06 기준'},
+  {name:'한국투자증권 현금', type:'예금/현금', owner:'본인', amount:536616, note:''},
+  {name:'미래에셋증권 현금', type:'예금/현금', owner:'본인', amount:130240, note:''},
+  {name:'삼성증권 현금', type:'예금/현금', owner:'본인', amount:16740, note:''},
+];
+
+// ══════════════════════════════════
+// INIT DEFAULT DATA
+// ══════════════════════════════════
+function initDefaultData() {
+  return {
+    assets: DEFAULT_ASSETS.map(a => ({...a, id: uid(), createdAt: '2026-06-02'})),
+    stocks: DEFAULT_STOCKS.map(s => ({...s, id: uid(), targetReturn: 0})),
+    cashflows: [
+      {id:uid(), name:'배당금', type:'income', cat:'배당/이자', amount:5070373},
+      {id:uid(), name:'생활비', type:'expense', cat:'생활비', amount:2500000},
+      {id:uid(), name:'의료/건강', type:'expense', cat:'의료/건강', amount:300000},
+      {id:uid(), name:'여행/골프', type:'expense', cat:'여행/취미', amount:500000}
+    ],
+    dividends: [],
+    gifts: [],
+    settings: {goal:5000000000, driveUrl:'', autoBackup:false, lastBackup:'', email:'yjjn2005@gmail.com', lastSync:'', usdkrw:0}
+  };
+}
+
+// ══════════════════════════════════
+// DATA LOAD
 // ══════════════════════════════════
 const KEY = 'familyOffice_v3';
 const DEF = {
@@ -941,40 +1019,18 @@ const DEF = {
   settings:{goal:5000000000,driveUrl:'',autoBackup:false,lastBackup:'',email:'yjjn2005@gmail.com',lastSync:'',usdkrw:0}
 };
 
-// 실제 포트폴리오 기본 데이터 (2026-06 기준, 44종목)
-function _getDefaultPortfolio() {
-  return {
-    assets: [{"id":uid(),"name":"\ud22c\uc790\ud3ec\ud2b8\ud3f4\ub9ac\uc624(\ud55c\uad6d\ud22c\uc790\uc99d\uad8c)","type":"\uc8fc\uc2dd/ETF","owner":"\ubcf8\uc778","amount":2956965521,"note":"2026-06 \uae30\uc900","createdAt":"2026-06-02"},{"id":uid(),"name":"\ud55c\uad6d\ud22c\uc790\uc99d\uad8c \ud604\uae08","type":"\uc608\uae08/\ud604\uae08","owner":"\ubcf8\uc778","amount":536616,"note":"","createdAt":"2026-06-02"},{"id":uid(),"name":"\ubbf8\ub798\uc5d0\uc14b\uc99d\uad8c \ud604\uae08","type":"\uc608\uae08/\ud604\uae08","owner":"\ubcf8\uc778","amount":130240,"note":"","createdAt":"2026-06-02"},{"id":uid(),"name":"\uc0bc\uc131\uc99d\uad8c \ud604\uae08","type":"\uc608\uae08/\ud604\uae08","owner":"\ubcf8\uc778","amount":16740,"note":"","createdAt":"2026-06-02"}],
-    stocks: [{"id":uid(),"ticker":"SCHD","name":"Schwab US Dividend ETF","amount":986344258,"yieldRate":3.5,"targetReturn":0,"category":"\ud574\uc678ETF","account":"해외증권"},{"id":uid(),"ticker":"LS\uc77c\ub809\ud2b8\ub9ad","name":"LS ELECTRIC","amount":291007500,"yieldRate":1.5,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"\ub85c\ubcf4\ud2f0\uc988","name":"ROBOTIS","amount":234090000,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"PLUS\uace0\ubc30\ub2f9\uc8fc","name":"PLUS \uace0\ubc30\ub2f9\uc8fc","amount":188141160,"yieldRate":4.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\ub450\uc0b0\uc5d0\ub108\ube4c\ub9ac\ud2f0","name":"\ub450\uc0b0\uc5d0\ub108\ube4c\ub9ac\ud2f0","amount":145800000,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"KODEX\uc0bc\uc131SK","name":"KODEX \uc0bc\uc131\uc804\uc790SK\ud558\uc774\ub2c9\uc2a4","amount":143485450,"yieldRate":1.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\ube0c\uc774\ud2f0","name":"\ube0c\uc774\ud2f0(VT GMP)","amount":123756360,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"\uc0bc\uc131\uc804\uc790","name":"\uc0bc\uc131\uc804\uc790","amount":94090500,"yieldRate":2.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"GOOGL","name":"Alphabet Inc.","amount":87174473,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"TIGER\ubc18\ub3c4\uccb410","name":"TIGER \ubc18\ub3c4\uccb4TOP10","amount":77554565,"yieldRate":0.5,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\uc18c\ud504\ud2b8\ubc45\ud06c","name":"\uc18c\ud504\ud2b8\ubc45\ud06c \uadf8\ub8f9","amount":54065794,"yieldRate":1.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"\ud604\ub300\ucc28","name":"\ud604\ub300\uc790\ub3d9\ucc28","amount":51030000,"yieldRate":3.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"IONQ","name":"IonQ Inc.","amount":44791242,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"\uad6d\uace022-5","name":"\uad6d\uace003375-3206(22-5)","amount":42079370,"yieldRate":3.375,"targetReturn":0,"category":"\ucc44\uad8cETF","account":"IRP"},{"id":uid(),"ticker":"TSLA","name":"Tesla Inc.","amount":39003866,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"TIGER\ucf54\ubc30\ub2e4","name":"TIGER \ucf54\ub9ac\uc544\ubc30\ub2f9\ub2e4\uc6b0\uc874\uc2a4","amount":34345440,"yieldRate":4.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"MSFT","name":"Microsoft Corp.","amount":33719089,"yieldRate":0.8,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"\uad6d\uace022-9","name":"\uad6d\uace003125-5209(22-9)","amount":33518360,"yieldRate":3.125,"targetReturn":0,"category":"\ucc44\uad8cETF","account":"IRP"},{"id":uid(),"ticker":"TIGER\ucf54TOP10","name":"TIGER \ucf54\ub9ac\uc544TOP10","amount":31491200,"yieldRate":1.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\uad6d\uace022-11","name":"\uad6d\uace003250-4209(22-11)","amount":31339525,"yieldRate":3.25,"targetReturn":0,"category":"\ucc44\uad8cETF","account":"IRP"},{"id":uid(),"ticker":"SOL\ubc30\ub2f9\ucc44\ud63c\ud569","name":"SOL \ubbf8\uad6d\ubc30\ub2f9\ubbf8\uad6d\ucc44\ud63c\ud56950","amount":23630775,"yieldRate":3.5,"targetReturn":0,"category":"\ud574\uc678ETF","account":"ISA"},{"id":uid(),"ticker":"AAPL","name":"Apple Inc.","amount":18719668,"yieldRate":0.5,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"LG\uc5d0\ub108\uc9c0\uc194\ub8e8\uc158","name":"LG\uc5d0\ub108\uc9c0\uc194\ub8e8\uc158","amount":15487500,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"\uad6d\uc77c\uc81c\uc9c0","name":"\uad6d\uc77c\uc81c\uc9c0","amount":13706850,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"TIGER\ubbf8\ubc30\ub2e4","name":"TIGER \ubbf8\uad6d\ubc30\ub2f9\ub2e4\uc6b0\uc874\uc2a4","amount":12524265,"yieldRate":3.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"SK\ub9ac\uce20","name":"SK\ub9ac\uce20","amount":11988800,"yieldRate":5.0,"targetReturn":0,"category":"\ub9ac\uce20","account":"ISA"},{"id":uid(),"ticker":"ACESPX","name":"ACE \ubbf8\uad6dS&P500","amount":10872680,"yieldRate":0.5,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"ACENDX","name":"ACE \ubbf8\uad6d\ub098\uc2a4\ub2e5100","amount":10539000,"yieldRate":0.3,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\ub86f\ub370\ub9ac\uce20","name":"\ub86f\ub370\ub9ac\uce20","amount":10189035,"yieldRate":5.5,"targetReturn":0,"category":"\ub9ac\uce20","account":"ISA"},{"id":uid(),"ticker":"TIGERNDX","name":"TIGER \ubbf8\uad6d\ub098\uc2a4\ub2e5100","amount":9604215,"yieldRate":0.3,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\uad6d\uace019-6","name":"\uad6d\uace001125-3909(19-6)","amount":9200765,"yieldRate":1.125,"targetReturn":0,"category":"\ucc44\uad8cETF","account":"IRP"},{"id":uid(),"ticker":"\uce74\uc774\ub178\uc2a4\uba54\ub4dc","name":"\uce74\uc774\ub178\uc2a4\uba54\ub4dc","amount":8638389,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"O","name":"Realty Income Corp.","amount":6169455,"yieldRate":5.5,"targetReturn":0,"category":"\ub9ac\uce20","account":"해외증권"},{"id":uid(),"ticker":"TWST","name":"Twist Bioscience","amount":5359057,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"CRCL","name":"Circle Internet Group","amount":4644027,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"TIGERSPX","name":"TIGER \ubbf8\uad6dS&P500","amount":4278000,"yieldRate":0.5,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"TIGERDJI30","name":"TIGER \ubbf8\uad6d\ub2e4\uc6b0\uc874\uc2a430","amount":3754000,"yieldRate":1.5,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"CRSP","name":"CRISPR Therapeutics","amount":3605848,"yieldRate":0.0,"targetReturn":0,"category":"\ud574\uc678\uc8fc\uc2dd","account":"해외증권"},{"id":uid(),"ticker":"1Q\uc6b0\uc8fc\ud56d\uacf5","name":"1Q \ubbf8\uad6d\uc6b0\uc8fc\ud56d\uacf5\ud14c\ud06c","amount":2595180,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4ETF","account":"ISA"},{"id":uid(),"ticker":"\ub9e5\ucffc\ub9ac\uc778\ud504\ub77c","name":"\ub9e5\ucffc\ub9ac\uc778\ud504\ub77c","amount":2389280,"yieldRate":5.0,"targetReturn":0,"category":"\ub9ac\uce20","account":"ISA"},{"id":uid(),"ticker":"\uc5d0\uc774\ud53c\uc54c","name":"\uc5d0\uc774\ud53c\uc54c(APR)","amount":2005000,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"\uc77c\uc9c4\ud558\uc774\uc194\ub8e8\uc2a4","name":"\uc77c\uc9c4\ud558\uc774\uc194\ub8e8\uc2a4","amount":146630,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"SK\ub514\uc2a4\ucee4\ubc84\ub9ac","name":"SK\ub514\uc2a4\ucee4\ubc84\ub9ac","amount":47100,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"},{"id":uid(),"ticker":"SK\ucf00\ubbf8\uce7c","name":"SK\ucf00\ubbf8\uce7c","amount":41850,"yieldRate":0.0,"targetReturn":0,"category":"\uad6d\ub0b4\uc8fc\uc2dd","account":"일반"}],
-    cashflows: [
-      {id:uid(),name:"배당금",type:"income",cat:"배당/이자",amount:5070373},
-      {id:uid(),name:"생활비",type:"expense",cat:"생활비",amount:2500000},
-      {id:uid(),name:"의료/건강",type:"expense",cat:"의료/건강",amount:300000},
-      {id:uid(),name:"여행/골프",type:"expense",cat:"여행/취미",amount:500000}
-    ],
-    dividends: [],
-    gifts: []
-  };
-}
-
-// Load from localStorage OR initialize with real portfolio
-let _stored = localStorage.getItem(KEY);
 let D;
-if (_stored) {
-  D = JSON.parse(_stored);
-  D.settings = Object.assign({}, DEF.settings, D.settings || {});
-  // If somehow empty, re-init
-  if (!D.stocks || D.stocks.length === 0) {
-    const def = _getDefaultPortfolio();
-    D.stocks = def.stocks;
-    D.assets = def.assets;
-    if (!D.cashflows.length) D.cashflows = def.cashflows;
+try {
+  const stored = localStorage.getItem(KEY);
+  D = stored ? JSON.parse(stored) : null;
+  if (!D || !D.stocks || D.stocks.length === 0) {
+    D = initDefaultData();
     localStorage.setItem(KEY, JSON.stringify(D));
+  } else {
+    D.settings = Object.assign({}, DEF.settings, D.settings || {});
   }
-} else {
-  // First visit: initialize with real portfolio
-  D = Object.assign({}, DEF, _getDefaultPortfolio());
-  D.settings = Object.assign({}, DEF.settings);
+} catch(e) {
+  D = initDefaultData();
   localStorage.setItem(KEY, JSON.stringify(D));
 }
 
@@ -985,7 +1041,6 @@ function save() {
   render();
   autoSync();
 }
-function uid() { return crypto.randomUUID(); }
 const today = new Date().toISOString().slice(0, 10);
 
 // ══════════════════════════════════
@@ -1014,31 +1069,23 @@ function toast(msg, type = '') {
 }
 
 // ══════════════════════════════════
-// ══════════════════════════════════
-// AUTO SYNC - URL hash token delivery
-// 첫 기기: 설정에서 토큰 1회 입력 → 공유 URL 생성
-// 다른 기기: 공유 URL 열기만 하면 자동 동기화
+// AUTO SYNC - GitHub Gist
 // ══════════════════════════════════
 const _G = "53beceaf792b069d2c3ac405f5a0afa6";
 const _F = "familyoffice_sync.json";
 
-// Token: stored in localStorage, never in source code
-// First device: enters token in settings
-// Other devices: opens shared URL with #t= hash
 function _tk() { return localStorage.getItem('fo_sync_token') || ''; }
 function _stk(t) { localStorage.setItem('fo_sync_token', t); }
 
-// Extract token from URL hash on page load (e.g. #t=ghp_xxx)
 (function extractTokenFromUrl() {
   const m = location.hash.match(/[#&]t=([^&]+)/);
   if (m) {
     _stk(decodeURIComponent(m[1]));
-    // Clean URL without exposing token in browser history
     history.replaceState(null, '', location.pathname + location.search);
   }
 })();
 
-let _syncTimer = null, _lastHash = '';
+let _lastHash = '';
 const _dHash = d => (d.stocks||[]).length + '_' + (d.assets||[]).length + '_' + (JSON.stringify(d).length);
 
 function setSyncStatus(s) {
@@ -1109,7 +1156,6 @@ function autoSync() {
   }, 4000);
 }
 
-// ── Sync Settings UI functions ──
 function saveGhToken() {
   const t = document.getElementById('ghTokenInput').value.trim();
   if (!t || !t.startsWith('ghp_')) return toast('올바른 GitHub 토큰을 입력하세요 (ghp_...)', 'error');
@@ -1117,7 +1163,6 @@ function saveGhToken() {
   showSyncReady();
   setSyncStatus('ready');
   toast('동기화 설정 완료 ✓', 'success');
-  // Push current data to cloud immediately
   setTimeout(() => cloudPush(false), 500);
 }
 
@@ -1193,7 +1238,6 @@ async function refreshAllPrices() {
   const btn = document.getElementById('refreshPricesBtn');
   btn.disabled = true; btn.innerHTML = '⏳ 조회중...';
 
-  // Exchange rate first
   const rateData = await fetchYahoo('USDKRW=X');
   if (rateData) {
     D.settings.usdkrw = Math.round(rateData.price);
@@ -1454,7 +1498,12 @@ function loadSample() {
   ];
   save(); toast('샘플 데이터 불러오기 완료 ✓', 'success');
 }
-function clearAll() { if (confirm('모든 데이터를 초기화하시겠습니까?')) { D = JSON.parse(JSON.stringify(DEF)); save(); toast('초기화 완료'); } }
+function clearAll() {
+  if (confirm('모든 데이터를 초기화하시겠습니까?')) {
+    D = initDefaultData();
+    save(); toast('초기화 완료 (기본 포트폴리오로 복원)');
+  }
+}
 
 // ══════════════════════════════════
 // CHARTS
@@ -1495,13 +1544,11 @@ function render() {
   document.getElementById('sbCash').textContent = won(net);
   document.getElementById('sbDiv').textContent = won(annual);
 
-  // USD/KRW
   if (D.settings.usdkrw) {
     document.getElementById('usdkrwVal').textContent = D.settings.usdkrw.toLocaleString('ko-KR');
     document.getElementById('usdkrwTime').textContent = '기준: ' + (D.settings.usdkrwTime || '');
   }
 
-  // asset type chart
   const typeMap = {};
   D.assets.forEach(x => typeMap[x.type] = (typeMap[x.type]||0) + (+x.amount||0));
   const typeItems = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([label,val])=>({label,val}));
@@ -1622,19 +1669,16 @@ function render() {
   document.getElementById('driveUrl').value = D.settings.driveUrl || '';
   document.getElementById('autoBackup').checked = !!D.settings.autoBackup;
   document.getElementById('emailInput').value = D.settings.email || '';
-  // Show sync UI based on token presence
   const hasToken = !!_tk();
   setSyncStatus(hasToken ? (D.settings.lastSync ? 'ok' : 'ready') : 'none');
   if (hasToken) { showSyncReady(); } else { showSyncSetup(); }
 }
 
-
-
 // ══════════════════════════════════
 // QUICK SYNC & MORE MENU
 // ══════════════════════════════════
 async function quickSync() {
-  const token = getGhToken();
+  const token = _tk();
   if (!token) {
     switchTab('settings', document.querySelector('[data-tab="settings"]'));
     toast('설정에서 GitHub 토큰을 입력하세요', 'error');
@@ -1685,7 +1729,6 @@ async function ocrProcessFile(file) {
   const reader = new FileReader();
   reader.onload = async (ev) => {
     const imgSrc = ev.target.result;
-    // Show processing
     document.getElementById('ocrDropZone').style.display = 'none';
     document.getElementById('ocrProcessing').style.display = 'block';
     document.getElementById('ocrPreviewImg').src = imgSrc;
@@ -1725,25 +1768,20 @@ function ocrShowResults(text, imgSrc) {
   document.getElementById('ocrPreviewImg2').src = imgSrc;
   document.getElementById('ocrRawText').textContent = text;
 
-  // Parse amounts
   const amtMatches = [...text.matchAll(/([\d,]+\s*(?:억\s*[\d,]*만?|만)\s*(?:[\d,]*\s*원)?|[\d,]+\s*원|₩[\d,]+)/g)];
   const amounts = [...new Map(amtMatches.map(m => {
     const v = parseKorAmt(m[0]); return v > 0 ? [v, {raw: m[0].trim(), value: v}] : null;
   }).filter(Boolean)).values()].filter(a => a.value >= 1000).sort((a,b)=>b.value-a.value).slice(0,6);
 
-  // Parse percentages
   const pcts = [...new Set([...text.matchAll(/(\d+\.?\d*)\s*%/g)].map(m=>parseFloat(m[1])).filter(p=>p>0&&p<100))].slice(0,5);
 
-  // Parse tickers
   const reserved = new Set(['OCR','PDF','ETF','ISA','IRP','API','URL','USD','KRW','JPY','CNY']);
-  const tickers = [...new Set([...text.matchAll(/([A-Z]{2,5})/g)].map(m=>m[1]).filter(t=>!reserved.has(t)))].slice(0,8);
+  const tickers = [...new Set([...text.matchAll(/([A-Z]{2,5})/g)].map(m=>m[1]).filter(t=>!reserved.has(t)))].slice(0,8);
 
-  // Parse dates
   const dates = [...new Set([...text.matchAll(/(\d{4})[.\/\-](\d{1,2})[.\/\-](\d{1,2})/g)].map(m=>`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`) )].slice(0,4);
 
   let hasData = false;
 
-  // Amounts
   if (amounts.length) {
     hasData = true;
     document.getElementById('ocrAmtSection').style.display = 'block';
@@ -1753,7 +1791,6 @@ function ocrShowResults(text, imgSrc) {
     document.getElementById('ocrAmtApply').innerHTML = '';
   } else { document.getElementById('ocrAmtSection').style.display = 'none'; }
 
-  // Tickers
   if (tickers.length) {
     hasData = true;
     document.getElementById('ocrTickerSection').style.display = 'block';
@@ -1762,7 +1799,6 @@ function ocrShowResults(text, imgSrc) {
     ).join('');
   } else { document.getElementById('ocrTickerSection').style.display = 'none'; }
 
-  // Percentages
   if (pcts.length) {
     hasData = true;
     document.getElementById('ocrPctSection').style.display = 'block';
@@ -1771,7 +1807,6 @@ function ocrShowResults(text, imgSrc) {
     ).join('');
   } else { document.getElementById('ocrPctSection').style.display = 'none'; }
 
-  // Dates
   if (dates.length) {
     hasData = true;
     document.getElementById('ocrDateSection').style.display = 'block';
@@ -1784,7 +1819,6 @@ function ocrShowResults(text, imgSrc) {
 }
 
 function ocrPickAmt(val, chip) {
-  // Remove selection from siblings
   chip.closest('#ocrAmtChips').querySelectorAll('.ocr-chip').forEach(c => c.style.borderColor = '');
   chip.style.borderColor = 'var(--green)';
   document.getElementById('ocrAmtApply').innerHTML = `
@@ -1817,17 +1851,16 @@ function ocrFill(id, val) {
   setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2500);
 }
 
-
 function loadMyPortfolio() {
   if (!confirm('현재 데이터를 삭제하고 기본 포트폴리오(44종목)를 불러올까요?')) return;
-  const def = _getDefaultPortfolio();
+  const def = initDefaultData();
   D.stocks = def.stocks; D.assets = def.assets; D.cashflows = def.cashflows;
   save(); toast('포트폴리오 44종목 로드 완료 ✓', 'success');
   switchTab('portfolio', document.querySelector('[data-tab=\'portfolio\']'));
 }
 
 // ══════════════════════════════════
-// PWA
+// PWA INSTALL
 // ══════════════════════════════════
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
@@ -1847,20 +1880,11 @@ document.getElementById('installBtn').addEventListener('click', async () => {
 // INIT
 // ══════════════════════════════════
 render();
-document.getElementById('giftDate').value = today;
+document.getElementById('giftDate').value = new Date().toISOString().slice(0,10);
 if (D.settings.autoBackup) setTimeout(() => excelBackup(), 1500);
-// Auto-pull from cloud on page load
 if (_tk()) setTimeout(() => cloudPull(), 1200);
 setSyncStatus(_tk() ? 'ready' : 'none');
-// 페이지 로드 시 자동 동기화 (모든 기기에서 최신 데이터 로드)
-setTimeout(() => cloudPull(), 1200);
 
-// Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
-
-// Enter key on forms
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.classList.contains('form-input')) {
     const section = e.target.closest('.section');
