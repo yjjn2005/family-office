@@ -11,6 +11,7 @@
 <title>Family Office | 자산관리 v3.0</title>
 <link rel="manifest" href="manifest.json"/>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
@@ -290,6 +291,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .divider{height:1px;background:var(--border);margin:16px 0}
 .flex{display:flex}.jb{justify-content:space-between}.ac{align-items:center}.gap8{gap:8px}.gap12{gap:12px}
 .w100{width:100%}
+
+/* ─── OCR MODAL ─── */
+.ocr-drop-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.02)}
+.ocr-drop-zone:hover,.ocr-drop-zone.drag-over{border-color:var(--blue);background:rgba(59,130,246,.06)}
+.ocr-drop-icon{font-size:48px;margin-bottom:12px}
+.ocr-drop-text{font-size:15px;font-weight:700;margin-bottom:6px}
+.ocr-drop-sub{font-size:12px;color:var(--muted)}
+.ocr-preview{max-width:100%;border-radius:var(--r-sm);margin-bottom:12px;border:1px solid var(--border)}
+.ocr-raw{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;font-family:'Roboto Mono',monospace;font-size:11px;color:#93c5fd;line-height:1.6;max-height:160px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.ocr-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:99px;margin:4px;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s}
+.ocr-chip:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.ocr-section{margin-top:16px}
+.ocr-section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px}
+.apply-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -355,6 +370,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <span class="sync-text" id="syncText">미설정</span>
       </div>
       <button class="btn btn-ghost btn-sm topbar-sync" onclick="cloudPush()" title="클라우드에 저장">☁️ 저장</button>
+      <button class="btn btn-ghost btn-sm" onclick="showOCRModal()" title="사진/스캔으로 데이터 입력">📷 스캔</button>
       <button class="btn btn-success btn-sm" onclick="excelBackup()">📊 엑셀</button>
       <button class="btn btn-amber btn-sm" onclick="jsonBackup()">📦 JSON</button>
     </div>
@@ -813,6 +829,82 @@ function sendDailyBriefing() {
       </div>
       <div class="form-group mb12"><label class="form-label">메모</label><textarea class="form-input" id="giftMemo" placeholder="세무사 확인여부, 특이사항 등"></textarea></div>
       <button class="btn btn-success btn-full" onclick="addGiftRecord()">✓ 저장</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- OCR MODAL -->
+<div class="modal-overlay" id="ocrModal" onclick="closeModalOut(event,'ocrModal')">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <div class="modal-title">📷 사진 스캔 자동 입력</div>
+      <button class="modal-close" onclick="closeModal('ocrModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Upload Zone -->
+      <div id="ocrDropZone" class="ocr-drop-zone" onclick="document.getElementById('ocrFileInput').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="ocrHandleDrop(event)">
+        <div class="ocr-drop-icon">📷</div>
+        <div class="ocr-drop-text">이미지를 드래그하거나 클릭하여 선택</div>
+        <div class="ocr-drop-sub mt8">증권사 앱 스크린샷 · 은행 통장 · 배당 내역서 · 잔고확인서</div>
+        <div class="btn-group" style="justify-content:center;margin-top:16px">
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();document.getElementById('ocrFileInput').click()">📁 파일 선택</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ocrCameraInput').click()">📷 카메라 촬영</button>
+        </div>
+        <input type="file" id="ocrFileInput" accept="image/*" style="display:none" onchange="ocrProcessFile(this.files[0])">
+        <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" style="display:none" onchange="ocrProcessFile(this.files[0])">
+      </div>
+
+      <!-- Processing -->
+      <div id="ocrProcessing" style="display:none">
+        <img id="ocrPreviewImg" class="ocr-preview">
+        <div class="flex ac gap8 mt12 mb8">
+          <span class="fs12 text-muted" id="ocrStatusText">한글 OCR 처리 중...</span>
+          <span class="fs12 text-amber fw7" id="ocrPctText">0%</span>
+        </div>
+        <div class="prog"><div class="bar" id="ocrProgBar" style="width:0%"></div></div>
+      </div>
+
+      <!-- Results -->
+      <div id="ocrResults" style="display:none">
+        <img id="ocrPreviewImg2" class="ocr-preview" style="max-height:180px;object-fit:contain">
+
+        <!-- Raw text -->
+        <details style="margin-bottom:12px">
+          <summary style="font-size:12px;color:var(--muted);cursor:pointer;padding:6px 0">원본 인식 텍스트 보기</summary>
+          <div class="ocr-raw mt8" id="ocrRawText"></div>
+        </details>
+
+        <!-- Parsed: Amounts -->
+        <div id="ocrAmtSection" class="ocr-section" style="display:none">
+          <div class="ocr-section-title">💰 인식된 금액 — 클릭하면 필드에 적용</div>
+          <div id="ocrAmtChips"></div>
+          <div id="ocrAmtApply"></div>
+        </div>
+
+        <!-- Parsed: Tickers -->
+        <div id="ocrTickerSection" class="ocr-section" style="display:none">
+          <div class="ocr-section-title">🏷️ 인식된 종목코드</div>
+          <div id="ocrTickerChips"></div>
+        </div>
+
+        <!-- Parsed: Percentages -->
+        <div id="ocrPctSection" class="ocr-section" style="display:none">
+          <div class="ocr-section-title">📊 인식된 수익률/배당률</div>
+          <div id="ocrPctChips"></div>
+        </div>
+
+        <!-- Parsed: Dates -->
+        <div id="ocrDateSection" class="ocr-section" style="display:none">
+          <div class="ocr-section-title">📅 인식된 날짜</div>
+          <div id="ocrDateChips"></div>
+        </div>
+
+        <div id="ocrNoData" class="notice warn" style="display:none">인식된 금융 데이터가 없습니다. 더 선명한 이미지를 사용하거나 직접 입력하세요.</div>
+
+        <div class="divider"></div>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="ocrReset()">🔄 다른 이미지 스캔</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1406,6 +1498,168 @@ function render() {
   document.getElementById('autoSync').checked = !!D.settings.autoSync;
 
   setSyncStatus(D.settings.jsonbinKey && D.settings.jsonbinBin ? (D.settings.lastSync ? 'ok' : 'ready') : 'none');
+}
+
+
+// ══════════════════════════════════
+// OCR (Tesseract.js)
+// ══════════════════════════════════
+function showOCRModal() {
+  ocrReset();
+  showModal('ocrModal');
+}
+
+function ocrReset() {
+  document.getElementById('ocrDropZone').style.display = 'block';
+  document.getElementById('ocrProcessing').style.display = 'none';
+  document.getElementById('ocrResults').style.display = 'none';
+  document.getElementById('ocrProgBar').style.width = '0%';
+  document.getElementById('ocrFileInput').value = '';
+  document.getElementById('ocrCameraInput').value = '';
+}
+
+function ocrHandleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) ocrProcessFile(file);
+}
+
+async function ocrProcessFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const imgSrc = ev.target.result;
+    // Show processing
+    document.getElementById('ocrDropZone').style.display = 'none';
+    document.getElementById('ocrProcessing').style.display = 'block';
+    document.getElementById('ocrPreviewImg').src = imgSrc;
+
+    try {
+      const { data: { text } } = await Tesseract.recognize(imgSrc, 'kor+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const p = Math.round(m.progress * 100);
+            document.getElementById('ocrProgBar').style.width = p + '%';
+            document.getElementById('ocrPctText').textContent = p + '%';
+            document.getElementById('ocrStatusText').textContent = p < 50 ? '이미지 분석 중...' : '한글 텍스트 인식 중...';
+          }
+        }
+      });
+      ocrShowResults(text, imgSrc);
+    } catch(err) {
+      document.getElementById('ocrStatusText').textContent = '오류: ' + err.message;
+      toast('OCR 오류: ' + err.message, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function parseKorAmt(s) {
+  let v = 0;
+  const em = s.match(/([\d,]+)\s*억/); if (em) v += parseInt(em[1].replace(/,/g,'')) * 100000000;
+  const mm = s.match(/([\d,]+)\s*만/); if (mm) v += parseInt(mm[1].replace(/,/g,'')) * 10000;
+  const wm = s.match(/([\d,]+)\s*원/); if (wm && !em && !mm) v = parseInt(wm[1].replace(/,/g,''));
+  if (!v) { const nm = s.match(/([\d]{1,3}(?:,[\d]{3})+)/); if (nm) v = parseInt(nm[1].replace(/,/g,'')); }
+  return v;
+}
+
+function ocrShowResults(text, imgSrc) {
+  document.getElementById('ocrProcessing').style.display = 'none';
+  document.getElementById('ocrResults').style.display = 'block';
+  document.getElementById('ocrPreviewImg2').src = imgSrc;
+  document.getElementById('ocrRawText').textContent = text;
+
+  // Parse amounts
+  const amtMatches = [...text.matchAll(/([\d,]+\s*(?:억\s*[\d,]*만?|만)\s*(?:[\d,]*\s*원)?|[\d,]+\s*원|₩[\d,]+)/g)];
+  const amounts = [...new Map(amtMatches.map(m => {
+    const v = parseKorAmt(m[0]); return v > 0 ? [v, {raw: m[0].trim(), value: v}] : null;
+  }).filter(Boolean)).values()].filter(a => a.value >= 1000).sort((a,b)=>b.value-a.value).slice(0,6);
+
+  // Parse percentages
+  const pcts = [...new Set([...text.matchAll(/(\d+\.?\d*)\s*%/g)].map(m=>parseFloat(m[1])).filter(p=>p>0&&p<100))].slice(0,5);
+
+  // Parse tickers
+  const reserved = new Set(['OCR','PDF','ETF','ISA','IRP','API','URL','USD','KRW','JPY','CNY']);
+  const tickers = [...new Set([...text.matchAll(/([A-Z]{2,5})/g)].map(m=>m[1]).filter(t=>!reserved.has(t)))].slice(0,8);
+
+  // Parse dates
+  const dates = [...new Set([...text.matchAll(/(\d{4})[.\/\-](\d{1,2})[.\/\-](\d{1,2})/g)].map(m=>`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`) )].slice(0,4);
+
+  let hasData = false;
+
+  // Amounts
+  if (amounts.length) {
+    hasData = true;
+    document.getElementById('ocrAmtSection').style.display = 'block';
+    document.getElementById('ocrAmtChips').innerHTML = amounts.map(a =>
+      `<span class="ocr-chip" onclick="ocrPickAmt(${a.value}, this)"><span class="text-green mono">${wonF(a.value)}</span><span class="text-muted fs11">${a.raw}</span></span>`
+    ).join('');
+    document.getElementById('ocrAmtApply').innerHTML = '';
+  } else { document.getElementById('ocrAmtSection').style.display = 'none'; }
+
+  // Tickers
+  if (tickers.length) {
+    hasData = true;
+    document.getElementById('ocrTickerSection').style.display = 'block';
+    document.getElementById('ocrTickerChips').innerHTML = tickers.map(t =>
+      `<span class="ocr-chip" onclick="ocrFill('ticker','${t}');ocrFill('divTicker','${t}');toast('티커 적용: ${t}','success')"><span class="mono text-blue">${t}</span></span>`
+    ).join('');
+  } else { document.getElementById('ocrTickerSection').style.display = 'none'; }
+
+  // Percentages
+  if (pcts.length) {
+    hasData = true;
+    document.getElementById('ocrPctSection').style.display = 'block';
+    document.getElementById('ocrPctChips').innerHTML = pcts.map(p =>
+      `<span class="ocr-chip" onclick="ocrPickPct(${p})"><span class="text-amber fw7">${p}%</span></span>`
+    ).join('');
+  } else { document.getElementById('ocrPctSection').style.display = 'none'; }
+
+  // Dates
+  if (dates.length) {
+    hasData = true;
+    document.getElementById('ocrDateSection').style.display = 'block';
+    document.getElementById('ocrDateChips').innerHTML = dates.map(d =>
+      `<span class="ocr-chip" onclick="ocrFill('giftDate','${d}');toast('날짜 적용: ${d}','success')"><span class="text-cyan mono">${d}</span></span>`
+    ).join('');
+  } else { document.getElementById('ocrDateSection').style.display = 'none'; }
+
+  document.getElementById('ocrNoData').style.display = hasData ? 'none' : 'block';
+}
+
+function ocrPickAmt(val, chip) {
+  // Remove selection from siblings
+  chip.closest('#ocrAmtChips').querySelectorAll('.ocr-chip').forEach(c => c.style.borderColor = '');
+  chip.style.borderColor = 'var(--green)';
+  document.getElementById('ocrAmtApply').innerHTML = `
+    <div class="apply-row mt8">
+      <span class="fs12 text-muted">어느 필드에 적용?</span>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('assetAmount','${val}');toast('자산 금액 적용 ✓','success')">🏦 자산 금액</button>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('stockAmount','${val}');toast('종목 금액 적용 ✓','success')">📈 종목 평가액</button>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('cashAmount','${val}');toast('현금흐름 금액 적용 ✓','success')">💸 현금흐름</button>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('divAmount','${val}');toast('배당금 적용 ✓','success')">📅 배당금</button>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('giftRecordAmt','${val}');toast('증여 금액 적용 ✓','success')">🏛️ 증여 금액</button>
+    </div>`;
+}
+
+function ocrPickPct(val) {
+  const applyDiv = document.getElementById('ocrAmtApply');
+  applyDiv.innerHTML = `
+    <div class="apply-row mt8">
+      <span class="fs12 text-muted">${val}% 적용:</span>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('yieldRate','${val}');toast('배당률 적용 ✓','success')">배당률</button>
+      <button class="btn btn-ghost btn-xs" onclick="ocrFill('targetReturn','${val}');toast('목표수익률 적용 ✓','success')">목표수익률</button>
+    </div>`;
+}
+
+function ocrFill(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = val;
+  el.style.borderColor = 'var(--green)';
+  el.style.boxShadow = '0 0 0 3px rgba(16,185,129,.2)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2500);
 }
 
 // ══════════════════════════════════
