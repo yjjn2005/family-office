@@ -444,7 +444,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div style="display:flex;flex-wrap:wrap;gap:7px">
           <span class="tag t-blue">삼성전자</span><span class="tag t-blue">현대차</span><span class="tag t-blue">LS일렉트릭</span><span class="tag t-blue">두산에너빌리티</span><span class="tag t-blue">HD현대중공업</span><span class="tag t-blue">미래에셋증권</span><span class="tag t-blue">LG에너지솔루션</span><span class="tag t-blue">로보티즈</span><span class="tag t-blue">레인보우로보틱스</span><span class="tag t-blue">브이티</span><span class="tag t-blue">에이피알</span><span class="tag t-amber">소프트뱅크</span><span class="tag t-green">엔비디아</span><span class="tag t-green">CRCL</span><span class="tag t-green">IONQ</span><span class="tag t-green">TWST</span><span class="tag t-green">CRSP</span><span class="tag t-gold">SCHD</span>
         </div>
-        <div class="notice warn mt12">📧 매일 07:30 이메일(yjjn2005@gmail.com) · 카카오톡 · Google Drive 자동 발송 — Apps Script 연동 (백업 탭 코드 참고)</div>
+        <div class="notice warn mt12">⬆ 설정 탭에서 "실제 포트폴리오 불러오기" 클릭하면 44종목 즉시 반영 &nbsp;|&nbsp; 📧 매일 07:30 이메일(yjjn2005@gmail.com) · 카카오톡 · Google Drive 자동 발송 — Apps Script 연동 (백업 탭 코드 참고)</div>
       </div>
     </div>
   </div>
@@ -744,6 +744,7 @@ function sendDailyBriefing() {
           <button class="btn btn-primary btn-full" onclick="saveSettings()">✓ 설정 저장</button>
           <div class="divider"></div>
           <div class="notice info mb12">샘플 데이터로 앱 기능을 미리 확인할 수 있습니다.</div>
+          <button class="btn btn-gold btn-full mb8" onclick="loadMyPortfolio()">📊 실제 포트폴리오 불러오기 (44종목)</button>
           <button class="btn btn-ghost btn-full mb8" onclick="loadSample()">📦 샘플 데이터 불러오기</button>
           <div class="notice warn mb12 mt8">전체 초기화는 되돌릴 수 없습니다.</div>
           <button class="btn btn-danger btn-full" onclick="clearAll()">🗑️ 전체 데이터 초기화</button>
@@ -1660,6 +1661,67 @@ function ocrFill(id, val) {
   el.style.borderColor = 'var(--green)';
   el.style.boxShadow = '0 0 0 3px rgba(16,185,129,.2)';
   setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2500);
+}
+
+
+// ── 실제 포트폴리오 데이터 로드 (스크린샷 기준 2026-06-02) ──
+function loadMyPortfolio() {
+  if (!confirm('현재 데이터를 삭제하고 실제 포트폴리오(44종목, 총 ₩2,968,427,659)를 불러올까요?')) return;
+  D.stocks = [
+    {id:uid(),ticker:"SCHD",name:"Schwab US Dividend ETF",amount:986344258,yieldRate:3.5,targetReturn:23.78,category:"\ud574\uc678ETF",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"LS\uc77c\ub809\ud2b8\ub9ad",name:"LS ELECTRIC",amount:291007500,yieldRate:1.5,targetReturn:397.19,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"\ub85c\ubcf4\ud2f0\uc988",name:"ROBOTIS",amount:234090000,yieldRate:0.0,targetReturn:669.95,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"PLUS\uace0\ubc30\ub2f9\uc8fc",name:"PLUS \uace0\ubc30\ub2f9\uc8fc",amount:188141160,yieldRate:4.0,targetReturn:117.18,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\ub450\uc0b0\uc5d0\ub108\ube4c\ub9ac\ud2f0",name:"\ub450\uc0b0\uc5d0\ub108\ube4c\ub9ac\ud2f0",amount:145800000,yieldRate:0.0,targetReturn:76.43,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"KODEX\uc0bc\uc131SK",name:"KODEX \uc0bc\uc131\uc804\uc790SK\ud558\uc774\ub2c9\uc2a4",amount:143485450,yieldRate:1.0,targetReturn:10.69,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\ube0c\uc774\ud2f0",name:"\ube0c\uc774\ud2f0(VT GMP)",amount:123756360,yieldRate:0.0,targetReturn:24.15,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"\uc0bc\uc131\uc804\uc790",name:"\uc0bc\uc131\uc804\uc790",amount:94090500,yieldRate:2.0,targetReturn:43.31,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"GOOGL",name:"Alphabet Inc.",amount:87174473,yieldRate:0.0,targetReturn:125.0,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"TIGER\ubc18\ub3c4\uccb410",name:"TIGER \ubc18\ub3c4\uccb4TOP10",amount:77554565,yieldRate:0.5,targetReturn:7.27,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\uc18c\ud504\ud2b8\ubc45\ud06c",name:"\uc18c\ud504\ud2b8\ubc45\ud06c \uadf8\ub8f9",amount:54065794,yieldRate:1.0,targetReturn:219.75,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"\ud604\ub300\ucc28",name:"\ud604\ub300\uc790\ub3d9\ucc28",amount:51030000,yieldRate:3.0,targetReturn:15.69,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"IONQ",name:"IonQ Inc.",amount:44791242,yieldRate:0.0,targetReturn:92.46,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"\uad6d\uace022-5",name:"\uad6d\uace003375-3206(22-5)",amount:42079370,yieldRate:3.375,targetReturn:6.16,category:"\ucc44\uad8cETF",account:"IRP"},
+    {id:uid(),ticker:"TSLA",name:"Tesla Inc.",amount:39003866,yieldRate:0.0,targetReturn:6.71,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"TIGER\ucf54\ubc30\ub2e4",name:"TIGER \ucf54\ub9ac\uc544\ubc30\ub2f9\ub2e4\uc6b0\uc874\uc2a4",amount:34345440,yieldRate:4.0,targetReturn:25.12,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"MSFT",name:"Microsoft Corp.",amount:33719089,yieldRate:0.8,targetReturn:13.68,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"\uad6d\uace022-9",name:"\uad6d\uace003125-5209(22-9)",amount:33518360,yieldRate:3.125,targetReturn:3.5,category:"\ucc44\uad8cETF",account:"IRP"},
+    {id:uid(),ticker:"TIGER\ucf54TOP10",name:"TIGER \ucf54\ub9ac\uc544TOP10",amount:31491200,yieldRate:1.0,targetReturn:16.71,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\uad6d\uace022-11",name:"\uad6d\uace003250-4209(22-11)",amount:31339525,yieldRate:3.25,targetReturn:5.59,category:"\ucc44\uad8cETF",account:"IRP"},
+    {id:uid(),ticker:"SOL\ubc30\ub2f9\ucc44\ud63c\ud569",name:"SOL \ubbf8\uad6d\ubc30\ub2f9\ubbf8\uad6d\ucc44\ud63c\ud56950",amount:23630775,yieldRate:3.5,targetReturn:9.91,category:"\ud574\uc678ETF",account:"ISA"},
+    {id:uid(),ticker:"AAPL",name:"Apple Inc.",amount:18719668,yieldRate:0.5,targetReturn:64.78,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"LG\uc5d0\ub108\uc9c0\uc194\ub8e8\uc158",name:"LG\uc5d0\ub108\uc9c0\uc194\ub8e8\uc158",amount:15487500,yieldRate:0.0,targetReturn:34.83,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"\uad6d\uc77c\uc81c\uc9c0",name:"\uad6d\uc77c\uc81c\uc9c0",amount:13706850,yieldRate:0.0,targetReturn:0,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"TIGER\ubbf8\ubc30\ub2e4",name:"TIGER \ubbf8\uad6d\ubc30\ub2f9\ub2e4\uc6b0\uc874\uc2a4",amount:12524265,yieldRate:3.0,targetReturn:10.31,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"SK\ub9ac\uce20",name:"SK\ub9ac\uce20",amount:11988800,yieldRate:5.0,targetReturn:1.47,category:"\ub9ac\uce20",account:"ISA"},
+    {id:uid(),ticker:"ACESPX",name:"ACE \ubbf8\uad6dS&P500",amount:10872680,yieldRate:0.5,targetReturn:117.52,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"ACENDX",name:"ACE \ubbf8\uad6d\ub098\uc2a4\ub2e5100",amount:10539000,yieldRate:0.3,targetReturn:178.81,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\ub86f\ub370\ub9ac\uce20",name:"\ub86f\ub370\ub9ac\uce20",amount:10189035,yieldRate:5.5,targetReturn:0,category:"\ub9ac\uce20",account:"ISA"},
+    {id:uid(),ticker:"TIGERNDX",name:"TIGER \ubbf8\uad6d\ub098\uc2a4\ub2e5100",amount:9604215,yieldRate:0.3,targetReturn:356.79,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\uad6d\uace019-6",name:"\uad6d\uace001125-3909(19-6)",amount:9200765,yieldRate:1.125,targetReturn:0,category:"\ucc44\uad8cETF",account:"IRP"},
+    {id:uid(),ticker:"\uce74\uc774\ub178\uc2a4\uba54\ub4dc",name:"\uce74\uc774\ub178\uc2a4\uba54\ub4dc",amount:8638389,yieldRate:0.0,targetReturn:0,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"O",name:"Realty Income Corp.",amount:6169455,yieldRate:5.5,targetReturn:7.24,category:"\ub9ac\uce20",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"TWST",name:"Twist Bioscience",amount:5359057,yieldRate:0.0,targetReturn:64.78,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"CRCL",name:"Circle Internet Group",amount:4644027,yieldRate:0.0,targetReturn:41.06,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"TIGERSPX",name:"TIGER \ubbf8\uad6dS&P500",amount:4278000,yieldRate:0.5,targetReturn:15.49,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"TIGERDJI30",name:"TIGER \ubbf8\uad6d\ub2e4\uc6b0\uc874\uc2a430",amount:3754000,yieldRate:1.5,targetReturn:121.09,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"CRSP",name:"CRISPR Therapeutics",amount:3605848,yieldRate:0.0,targetReturn:0,category:"\ud574\uc678\uc8fc\uc2dd",account:"\ud574\uc678\uc99d\uad8c"},
+    {id:uid(),ticker:"1Q\uc6b0\uc8fc\ud56d\uacf5",name:"1Q \ubbf8\uad6d\uc6b0\uc8fc\ud56d\uacf5\ud14c\ud06c",amount:2595180,yieldRate:0.0,targetReturn:6.99,category:"\uad6d\ub0b4ETF",account:"ISA"},
+    {id:uid(),ticker:"\ub9e5\ucffc\ub9ac\uc778\ud504\ub77c",name:"\ub9e5\ucffc\ub9ac\uc778\ud504\ub77c",amount:2389280,yieldRate:5.0,targetReturn:0,category:"\ub9ac\uce20",account:"ISA"},
+    {id:uid(),ticker:"\uc5d0\uc774\ud53c\uc54c",name:"\uc5d0\uc774\ud53c\uc54c(APR)",amount:2005000,yieldRate:0.0,targetReturn:15.06,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"\uc77c\uc9c4\ud558\uc774\uc194\ub8e8\uc2a4",name:"\uc77c\uc9c4\ud558\uc774\uc194\ub8e8\uc2a4",amount:146630,yieldRate:0.0,targetReturn:0,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"SK\ub514\uc2a4\ucee4\ubc84\ub9ac",name:"SK\ub514\uc2a4\ucee4\ubc84\ub9ac",amount:47100,yieldRate:0.0,targetReturn:0,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"},
+    {id:uid(),ticker:"SK\ucf00\ubbf8\uce7c",name:"SK\ucf00\ubbf8\uce7c",amount:41850,yieldRate:0.0,targetReturn:1.33,category:"\uad6d\ub0b4\uc8fc\uc2dd",account:"\uc77c\ubc18"}
+  ];
+  D.assets = [
+    {id:uid(),name:"\ud22c\uc790 \ud3ec\ud2b8\ud3f4\ub9ac\uc624(\ud55c\uad6d\ud22c\uc790\uc99d\uad8c)",type:"\uc8fc\uc2dd/ETF",owner:"\ubcf8\uc778",amount:2956965521,note:"\uc2a4\ud06c\ub9b0\uc0f7 \uae30\uc900 2025-06",createdAt:'2026-06-02'},
+    {id:uid(),name:"\ud55c\uad6d\ud22c\uc790\uc99d\uad8c \ud604\uae08\uc131\uc790\uc0b0",type:"\uc608\uae08/\ud604\uae08",owner:"\ubcf8\uc778",amount:536616,note:"",createdAt:'2026-06-02'},
+    {id:uid(),name:"\ubbf8\ub798\uc5d0\uc14b\uc99d\uad8c \ud604\uae08\uc131\uc790\uc0b0",type:"\uc608\uae08/\ud604\uae08",owner:"\ubcf8\uc778",amount:130240,note:"",createdAt:'2026-06-02'},
+    {id:uid(),name:"\uc0bc\uc131\uc99d\uad8c \ud604\uae08\uc131\uc790\uc0b0",type:"\uc608\uae08/\ud604\uae08",owner:"\ubcf8\uc778",amount:16740,note:"",createdAt:'2026-06-02'}
+  ];
+  save();
+  toast('포트폴리오 44종목 로드 완료 ✓', 'success');
+  switchTab('portfolio', document.querySelector('[data-tab=\'portfolio\']'));
 }
 
 // ══════════════════════════════════
