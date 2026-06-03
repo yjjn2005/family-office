@@ -582,8 +582,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div id="sec-dividend" class="section">
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-head-left"><span class="ph-icon">📅</span><div><div class="ph-title">배당 등록</div></div></div>
-        <span class="ph-badge green" id="divTotalBadge">연 ₩0</span>
+        <div class="panel-head-left"><span class="ph-icon">📅</span><div><div class="ph-title">배당 캘린더</div></div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-gold btn-sm" onclick="autoFillDividends(true)">🔄 자동 계산</button>
+          <span class="ph-badge green" id="divTotalBadge">연 ₩0</span>
+        </div>
       </div>
       <div class="panel-body">
         <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr auto">
@@ -1355,6 +1358,78 @@ async function refreshAllPrices() {
   toast('시세 업데이트 완료 ✓', 'success');
 }
 
+
+// ══════════════════════════════════
+// 배당 자동 계산 (종목 yieldRate 기반)
+// ══════════════════════════════════
+const DIV_SCHEDULE = {
+  // 티커: 지급월 배열 (연 N회)
+  'SCHD':        [3,6,9,12],
+  'SOL배당채혼합': [1,2,3,4,5,6,7,8,9,10,11,12],
+  'SOL배당채':   [1,2,3,4,5,6,7,8,9,10,11,12],
+  'PLUS고배당주': [1,2,3,4,5,6,7,8,9,10,11,12],
+  'PLUS고배당':  [1,2,3,4,5,6,7,8,9,10,11,12],
+  'TIGER코배다': [1,2,3,4,5,6,7,8,9,10,11,12],
+  'TIGER미배다': [1,2,3,4,5,6,7,8,9,10,11,12],
+  'SK리츠':      [3,6,9,12],
+  '롯데리츠':    [6,12],
+  '맥쿼리인프라': [6,12],
+  'O':           [1,2,3,4,5,6,7,8,9,10,11,12],
+  '삼성전자':    [3,6,9,12],
+  '현대차':      [4,12],
+  'LS일렉트릭':  [4],
+  'MSFT':        [3,6,9,12],
+  'AAPL':        [2,5,8,11],
+  '소프트뱅크':  [3,9],
+  '국고22-5':    [1,7],
+  '국고22-9':    [4,10],
+  '국고22-11':   [6,12],
+  '국고19-6':    [3,9],
+  // 일반 패턴 (티커 미등록 시 yieldRate>0이면 분기배당으로 추정)
+};
+
+const MONTHS_KR = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+function autoFillDividends(force) {
+  if (!force && D.dividends && D.dividends.length > 0) return;
+  if (force && !confirm('현재 배당 내역을 삭제하고 보유 종목 기준으로 자동 계산할까요?')) return;
+
+  const entries = [];
+  for (const s of D.stocks) {
+    const yr = parseFloat(s.yieldRate) || 0;
+    if (yr <= 0) continue;
+    const annualDiv = (parseFloat(s.amount) || 0) * yr / 100;
+    if (annualDiv < 1000) continue;
+
+    // 지급 월 결정: 등록된 스케줄 or 기본값(분기)
+    let months = DIV_SCHEDULE[s.ticker] || null;
+    if (!months) {
+      // 월배당 키워드 체크
+      const n = (s.name || '') + (s.ticker || '');
+      if (/월배당|monthly|배당다우|고배당|SOL|TIGER.*배당/i.test(n)) months = [1,2,3,4,5,6,7,8,9,10,11,12];
+      else if (/리츠|REIT|인프라/i.test(n)) months = [3,6,9,12];
+      else if (/국고|채권|bond/i.test(n)) months = [3,9];
+      else months = [3,6,9,12]; // 기본 분기
+    }
+
+    const perPeriod = Math.round(annualDiv / months.length);
+    for (const m of months) {
+      entries.push({id:uid(), ticker:s.ticker, month:MONTHS_KR[m-1], amount:perPeriod});
+    }
+  }
+
+  D.dividends = entries;
+  save();
+  toast(`배당 캘린더 자동 계산 완료 — ${entries.length}건 등록 ✓`, 'success');
+}
+
+// 앱 초기화 시 dividends 비어있으면 자동 실행
+function checkAndFillDividends() {
+  if (!D.dividends || D.dividends.length === 0) {
+    autoFillDividends(false);
+  }
+}
+
 // ══════════════════════════════════
 // SIDEBAR / TAB
 // ══════════════════════════════════
@@ -1977,6 +2052,7 @@ document.getElementById('installBtn').addEventListener('click', async () => {
 // ══════════════════════════════════
 // INIT
 // ══════════════════════════════════
+checkAndFillDividends();
 render();
 document.getElementById('giftDate').value = new Date().toISOString().slice(0,10);
 if (D.settings.autoBackup) setTimeout(() => excelBackup(), 1500);
